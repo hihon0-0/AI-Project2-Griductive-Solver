@@ -1,0 +1,191 @@
+import json
+import jsonschema
+
+# Load schema
+with open("puzzle_schema.json", "r", encoding="utf-8") as f:
+    schema = json.load(f)
+
+# Design sample 3x3 puzzle
+sample_puzzle = {
+    "puzzle_id": "puzzle_3x3_01",
+    "name": "The Town Hall Mystery",
+    "size": 3,
+    "initial_revealed": ["A1"],
+    "grid": [
+        {
+            "id": "A1",
+            "row": 1,
+            "col": "A",
+            "character": {"name": "Abel", "occupation": "Baker"},
+            "hidden_status": "INNOCENT",
+            "clue": {
+                "id": "clue_A1",
+                "type": "SAME",
+                "params": {
+                    "target1": "A1",
+                    "target2": "B1"
+                },
+                "description": "Abel and Bea have the same status."
+            }
+        },
+        {
+            "id": "B1",
+            "row": 1,
+            "col": "B",
+            "character": {"name": "Bea", "occupation": "Cook"},
+            "hidden_status": "INNOCENT",
+            "clue": {
+                "id": "clue_B1",
+                "type": "EXACTLY",
+                "params": {
+                    "count": 1,
+                    "region": {
+                        "type": "ROW",
+                        "row": 1
+                    }
+                },
+                "description": "Exactly 1 person in Row 1 is a Criminal."
+            }
+        },
+        {
+            "id": "C1",
+            "row": 1,
+            "col": "C",
+            "character": {"name": "Clara", "occupation": "Guard"},
+            "hidden_status": "CRIMINAL",
+            "clue": {
+                "id": "clue_C1",
+                "type": "DIFFERENT",
+                "params": {
+                    "target1": "C1",
+                    "target2": "C2"
+                },
+                "description": "Clara and Franz have different statuses."
+            }
+        },
+        {
+            "id": "A2",
+            "row": 2,
+            "col": "A",
+            "character": {"name": "David", "occupation": "Detective"},
+            "hidden_status": "CRIMINAL",
+            "clue": {
+                "id": "clue_A2",
+                "type": "AT_LEAST",
+                "params": {
+                    "count": 1,
+                    "region": {
+                        "type": "EXPLICIT",
+                        "cells": ["A3", "B3"]
+                    }
+                },
+                "description": "At least 1 person among Grant and Hannah is a Criminal."
+            }
+        },
+        {
+            "id": "B2",
+            "row": 2,
+            "col": "B",
+            "character": {"name": "Eliza", "occupation": "Judge"},
+            "hidden_status": "INNOCENT",
+            "clue": {
+                "id": "clue_B2",
+                "type": "AT_MOST",
+                "params": {
+                    "count": 1,
+                    "region": {
+                        "type": "COLUMN",
+                        "col": "A"
+                    }
+                },
+                "description": "At most 1 person in Column A is a Criminal."
+            }
+        },
+        {
+            "id": "C2",
+            "row": 2,
+            "col": "C",
+            "character": {"name": "Franz", "occupation": "Clerk"},
+            "hidden_status": "INNOCENT",
+            "clue": {
+                "id": "clue_C2",
+                "type": "EXACTLY",
+                "params": {
+                    "count": 2,
+                    "region": {
+                        "type": "COLUMN",
+                        "col": "C"
+                    }
+                },
+                "description": "Exactly 2 people in Column C are Criminals."
+            }
+        },
+        {
+            "id": "A3",
+            "row": 3,
+            "col": "A",
+            "character": {"name": "Grant", "occupation": "Artist"},
+            "hidden_status": "INNOCENT",
+            "clue": {
+                "id": "clue_A3",
+                "type": "FACT",
+                "params": {
+                    "target": "B2",
+                    "status": "INNOCENT"
+                },
+                "description": "Eliza is Innocent."
+            }
+        },
+        {
+            "id": "B3",
+            "row": 3,
+            "col": "B",
+            "character": {"name": "Hannah", "occupation": "Doctor"},
+            "hidden_status": "INNOCENT",
+            "clue": {
+                "id": "clue_B3",
+                "type": "COUNT_COMPARE",
+                "params": {
+                    "operator": "GT",
+                    "region1": {
+                        "type": "COLUMN",
+                        "col": "C"
+                    },
+                    "region2": {
+                        "type": "COLUMN",
+                        "col": "B"
+                    }
+                },
+                "description": "Column C has more Criminals than Column B."
+            }
+        },
+        {
+            "id": "C3",
+            "row": 3,
+            "col": "C",
+            "character": {"name": "Ivy", "occupation": "Sailor"},
+            "hidden_status": "CRIMINAL",
+            "clue": {
+                "id": "clue_C3",
+                "type": "PARITY",
+                "params": {
+                    "parity": "EVEN",
+                    "region": {
+                        "type": "ROW",
+                        "row": 2
+                    }
+                },
+                "description": "An even number of people in Row 2 are Criminals."
+            }
+        }
+    ]
+}
+
+# Validate with jsonschema
+jsonschema.validate(instance=sample_puzzle, schema=schema)
+print("Validation against schema succeeded!")
+
+# Save to sample_3x3.json
+with open("sample_3x3.json", "w", encoding="utf-8") as f:
+    json.dump(sample_puzzle, f, indent=2, ensure_ascii=False)
+print("Saved sample_3x3.json successfully!")

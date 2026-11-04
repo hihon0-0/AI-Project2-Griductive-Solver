@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GriductivePuzzleSchema",
+  "description": "Standardized schema for Griductive puzzles (3x3, 4x4, 5x5) including core and extended clues.",
+  "type": "object",
+  "required": [
+    "puzzle_id",
+    "name",
+    "size",
+    "initial_revealed",
+    "grid"
+  ],
+  "properties": {
+    "puzzle_id": {
+      "type": "string",
+      "description": "Unique identifier for the puzzle (e.g. puzzle_3x3_01)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name or title of the stage"
+    },
+    "size": {
+      "type": "integer",
+      "minimum": 3,
+      "maximum": 5,
+      "description": "Dimension of the square grid N x N (3, 4, or 5)"
+    },
+    "initial_revealed": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-E][1-5]$"
+      },
+      "minItems": 1,
+      "description": "List of cell coordinates (e.g., ['A1', 'B2']) face-up at game start"
+    },
+    "grid": {
+      "type": "array",
+      "description": "List of all N x N cells in the board",
+      "items": {
+        "$ref": "#/$defs/Cell"
+      }
+    }
+  },
+  "$defs": {
+    "Cell": {
+      "type": "object",
+      "required": [
+        "id",
+        "row",
+        "col",
+        "character",
+        "hidden_status",
+        "clue"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-E][1-5]$",
+          "description": "Cell coordinate identifier like A1, B2, C3"
+        },
+        "row": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "description": "1-based row index (from top to bottom)"
+        },
+        "col": {
+          "type": "string",
+          "enum": ["A", "B", "C", "D", "E"],
+          "description": "Column letter (from left to right)"
+        },
+        "character": {
+          "type": "object",
+          "required": ["name", "occupation"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Character display name"
+            },
+            "occupation": {
+              "type": "string",
+              "description": "Character profession/role"
+            },
+            "avatar": {
+              "type": "string",
+              "description": "Optional asset image path or icon name"
+            }
+          }
+        },
+        "hidden_status": {
+          "type": "string",
+          "enum": ["CRIMINAL", "INNOCENT"],
+          "description": "True hidden status known only to the Game Engine"
+        },
+        "clue": {
+          "$ref": "#/$defs/Clue"
+        }
+      }
+    },
+    "Region": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "ROW",
+            "COLUMN",
+            "NEIGHBORS",
+            "EXPLICIT"
+          ],
+          "description": "Type of region"
+        },
+        "row": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "description": "Required when type == 'ROW'"
+        },
+        "col": {
+          "type": "string",
+          "enum": ["A", "B", "C", "D", "E"],
+          "description": "Required when type == 'COLUMN'"
+        },
+        "cell": {
+          "type": "string",
+          "pattern": "^[A-E][1-5]$",
+          "description": "Target cell whose neighbors are counted, when type == 'NEIGHBORS'"
+        },
+        "cells": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-E][1-5]$"
+          },
+          "description": "List of cell identifiers when type == 'EXPLICIT'"
+        }
+      }
+    },
+    "Clue": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "params",
+        "description"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this clue (e.g., clue_A1)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Natural language text to show on UI/card"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "FACT",
+            "SAME",
+            "DIFFERENT",
+            "EXACTLY",
+            "AT_LEAST",
+            "AT_MOST",
+            "PARITY",
+            "COUNT_COMPARE"
+          ],
+          "description": "Clue template name (6 core + 2 extensions)"
+        },
+        "params": {
+          "type": "object",
+          "description": "Structured parameters corresponding to the clue type",
+          "properties": {
+            "target": {
+              "type": "string",
+              "pattern": "^[A-E][1-5]$",
+              "description": "Used by FACT"
+            },
+            "status": {
+              "type": "string",
+              "enum": ["CRIMINAL", "INNOCENT"],
+              "description": "Used by FACT"
+            },
+            "target1": {
+              "type": "string",
+              "pattern": "^[A-E][1-5]$",
+              "description": "Used by SAME, DIFFERENT"
+            },
+            "target2": {
+              "type": "string",
+              "pattern": "^[A-E][1-5]$",
+              "description": "Used by SAME, DIFFERENT"
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Used by EXACTLY, AT_LEAST, AT_MOST"
+            },
+            "region": {
+              "$ref": "#/$defs/Region",
+              "description": "Used by EXACTLY, AT_LEAST, AT_MOST, PARITY"
+            },
+            "parity": {
+              "type": "string",
+              "enum": ["EVEN", "ODD"],
+              "description": "Used by PARITY extension"
+            },
+            "operator": {
+              "type": "string",
+              "enum": ["GT", "GTE", "LT", "LTE", "EQ"],
+              "description": "Used by COUNT_COMPARE extension"
+            },
+            "region1": {
+              "$ref": "#/$defs/Region",
+              "description": "First region in COUNT_COMPARE"
+            },
+            "region2": {
+              "$ref": "#/$defs/Region",
+              "description": "Second region in COUNT_COMPARE"
+            }
+          }
+        }
+      }
+    }
+  }
+}
