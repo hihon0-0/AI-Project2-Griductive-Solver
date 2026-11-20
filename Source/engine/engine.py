@@ -2,6 +2,7 @@
 Strictly enforces separation between private game state and public knowledge state.
 """
 from typing import Optional, Callable, Any
+import copy
 from .models import PublicState, VerdictResult, VerdictStatus, Character
 from .region_helper import RegionHelper
 
@@ -66,7 +67,7 @@ class GameEngine:
         return PublicState(
             grid_size=self.size,
             revealed_verdicts=dict(self.revealed_statuses),
-            revealed_clues=list(self.revealed_clues.values()),
+            revealed_clues=[copy.deepcopy(c) for c in self.revealed_clues.values()],
             unsolved_cells=unsolved
         )
 

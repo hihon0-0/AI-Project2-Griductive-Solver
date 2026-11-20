@@ -58,12 +58,12 @@
       "hidden_status": "CRIMINAL",
       "clue": {
         "id": "clue_C1",
-        "type": "DIFFERENT",
+        "type": "SAME",
         "params": {
           "target1": "C1",
           "target2": "C2"
         },
-        "description": "Clara and Franz have different statuses."
+        "description": "Clara and Franz have the same status."
       }
     },
     {
@@ -77,18 +77,18 @@
       "hidden_status": "CRIMINAL",
       "clue": {
         "id": "clue_A2",
-        "type": "AT_LEAST",
+        "type": "AT_MOST",
         "params": {
           "count": 1,
           "region": {
             "type": "EXPLICIT",
             "cells": [
-              "A3",
-              "B3"
+              "A2",
+              "A3"
             ]
           }
         },
-        "description": "At least 1 person among Grant and Hannah is a Criminal."
+        "description": "At most 1 person among David and Grant is a Criminal."
       }
     },
     {
@@ -102,15 +102,15 @@
       "hidden_status": "INNOCENT",
       "clue": {
         "id": "clue_B2",
-        "type": "AT_MOST",
+        "type": "PARITY",
         "params": {
-          "count": 1,
+          "parity": "EVEN",
           "region": {
-            "type": "COLUMN",
-            "col": "A"
+            "type": "ROW",
+            "row": 2
           }
         },
-        "description": "At most 1 person in Column A is a Criminal."
+        "description": "An even number of people in Row 2 are Criminals."
       }
     },
     {
@@ -121,7 +121,7 @@
         "name": "Franz",
         "occupation": "Clerk"
       },
-      "hidden_status": "INNOCENT",
+      "hidden_status": "CRIMINAL",
       "clue": {
         "id": "clue_C2",
         "type": "EXACTLY",
@@ -146,12 +146,19 @@
       "hidden_status": "INNOCENT",
       "clue": {
         "id": "clue_A3",
-        "type": "FACT",
+        "type": "COUNT_COMPARE",
         "params": {
-          "target": "B2",
-          "status": "INNOCENT"
+          "operator": "GT",
+          "region1": {
+            "type": "COLUMN",
+            "col": "A"
+          },
+          "region2": {
+            "type": "ROW",
+            "row": 3
+          }
         },
-        "description": "Eliza is Innocent."
+        "description": "Column A has more Criminals than Row 3."
       }
     },
     {
@@ -165,19 +172,15 @@
       "hidden_status": "INNOCENT",
       "clue": {
         "id": "clue_B3",
-        "type": "COUNT_COMPARE",
+        "type": "EXACTLY",
         "params": {
-          "operator": "GT",
-          "region1": {
-            "type": "COLUMN",
-            "col": "C"
-          },
-          "region2": {
-            "type": "COLUMN",
-            "col": "B"
+          "count": 0,
+          "region": {
+            "type": "ROW",
+            "row": 3
           }
         },
-        "description": "Column C has more Criminals than Column B."
+        "description": "Nobody in Row 3 is a Criminal."
       }
     },
     {
@@ -185,21 +188,18 @@
       "row": 3,
       "col": "C",
       "character": {
-        "name": "Ivy",
+        "name": "Ian",
         "occupation": "Sailor"
       },
-      "hidden_status": "CRIMINAL",
+      "hidden_status": "INNOCENT",
       "clue": {
         "id": "clue_C3",
-        "type": "PARITY",
+        "type": "SAME",
         "params": {
-          "parity": "EVEN",
-          "region": {
-            "type": "ROW",
-            "row": 2
-          }
+          "target1": "C3",
+          "target2": "B2"
         },
-        "description": "An even number of people in Row 2 are Criminals."
+        "description": "Ian and Eliza have the same status."
       }
     }
   ]

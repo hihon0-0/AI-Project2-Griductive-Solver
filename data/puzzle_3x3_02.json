@@ -1,0 +1,203 @@
+{
+  "puzzle_id": "puzzle_3x3_02",
+  "name": "The Market Heist",
+  "size": 3,
+  "initial_revealed": [
+    "B1"
+  ],
+  "grid": [
+    {
+      "id": "A1",
+      "row": 1,
+      "col": "A",
+      "character": {
+        "name": "Alice",
+        "occupation": "Merchant"
+      },
+      "hidden_status": "CRIMINAL",
+      "clue": {
+        "id": "clue_A1",
+        "type": "EXACTLY",
+        "params": {
+          "count": 2,
+          "region": {
+            "type": "COLUMN",
+            "col": "A"
+          }
+        },
+        "description": "Exactly 2 people in Column A are Criminals."
+      }
+    },
+    {
+      "id": "B1",
+      "row": 1,
+      "col": "B",
+      "character": {
+        "name": "Bob",
+        "occupation": "Jeweler"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_B1",
+        "type": "DIFFERENT",
+        "params": {
+          "target1": "B1",
+          "target2": "B2"
+        },
+        "description": "Bob and Edward have different statuses."
+      }
+    },
+    {
+      "id": "C1",
+      "row": 1,
+      "col": "C",
+      "character": {
+        "name": "Charles",
+        "occupation": "Guard"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_C1",
+        "type": "EXACTLY",
+        "params": {
+          "count": 1,
+          "region": {
+            "type": "ROW",
+            "row": 1
+          }
+        },
+        "description": "Exactly 1 person in Row 1 is a Criminal."
+      }
+    },
+    {
+      "id": "A2",
+      "row": 2,
+      "col": "A",
+      "character": {
+        "name": "Diana",
+        "occupation": "Detective"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_A2",
+        "type": "SAME",
+        "params": {
+          "target1": "A2",
+          "target2": "C1"
+        },
+        "description": "Diana and Charles have the same status."
+      }
+    },
+    {
+      "id": "B2",
+      "row": 2,
+      "col": "B",
+      "character": {
+        "name": "Edward",
+        "occupation": "Scholar"
+      },
+      "hidden_status": "CRIMINAL",
+      "clue": {
+        "id": "clue_B2",
+        "type": "EXACTLY",
+        "params": {
+          "count": 1,
+          "region": {
+            "type": "ROW",
+            "row": 2
+          }
+        },
+        "description": "Exactly 1 person in Row 2 is a Criminal."
+      }
+    },
+    {
+      "id": "C2",
+      "row": 2,
+      "col": "C",
+      "character": {
+        "name": "Fiona",
+        "occupation": "Artist"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_C2",
+        "type": "AT_MOST",
+        "params": {
+          "count": 1,
+          "region": {
+            "type": "COLUMN",
+            "col": "B"
+          }
+        },
+        "description": "At most 1 person in Column B is a Criminal."
+      }
+    },
+    {
+      "id": "A3",
+      "row": 3,
+      "col": "A",
+      "character": {
+        "name": "George",
+        "occupation": "Blacksmith"
+      },
+      "hidden_status": "CRIMINAL",
+      "clue": {
+        "id": "clue_A3",
+        "type": "PARITY",
+        "params": {
+          "parity": "EVEN",
+          "region": {
+            "type": "NEIGHBORS",
+            "cell": "B2"
+          }
+        },
+        "description": "An even number of neighbors of Edward are Criminals."
+      }
+    },
+    {
+      "id": "B3",
+      "row": 3,
+      "col": "B",
+      "character": {
+        "name": "Helen",
+        "occupation": "Tailor"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_B3",
+        "type": "COUNT_COMPARE",
+        "params": {
+          "operator": "GT",
+          "region1": {
+            "type": "COLUMN",
+            "col": "A"
+          },
+          "region2": {
+            "type": "COLUMN",
+            "col": "C"
+          }
+        },
+        "description": "Column A has more Criminals than Column C."
+      }
+    },
+    {
+      "id": "C3",
+      "row": 3,
+      "col": "C",
+      "character": {
+        "name": "Ian",
+        "occupation": "Sailor"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_C3",
+        "type": "FACT",
+        "params": {
+          "target": "C3",
+          "status": "INNOCENT"
+        },
+        "description": "Ian is Innocent."
+      }
+    }
+  ]
+}
