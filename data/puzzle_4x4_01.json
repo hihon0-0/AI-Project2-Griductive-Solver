@@ -1,0 +1,346 @@
+{
+  "puzzle_id": "puzzle_4x4_01",
+  "name": "The Royal Gala Intrigue",
+  "size": 4,
+  "initial_revealed": [
+    "A1",
+    "C2"
+  ],
+  "grid": [
+    {
+      "id": "A1",
+      "row": 1,
+      "col": "A",
+      "character": {
+        "name": "Abel",
+        "occupation": "Ambassador"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_A1",
+        "type": "SAME",
+        "params": {
+          "target1": "A1",
+          "target2": "B1"
+        },
+        "description": "Abel and Bea have the same status."
+      }
+    },
+    {
+      "id": "B1",
+      "row": 1,
+      "col": "B",
+      "character": {
+        "name": "Bea",
+        "occupation": "Baroness"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_B1",
+        "type": "DIFFERENT",
+        "params": {
+          "target1": "B1",
+          "target2": "C1"
+        },
+        "description": "Bea and Clara have different statuses."
+      }
+    },
+    {
+      "id": "C1",
+      "row": 1,
+      "col": "C",
+      "character": {
+        "name": "Clara",
+        "occupation": "Countess"
+      },
+      "hidden_status": "CRIMINAL",
+      "clue": {
+        "id": "clue_C1",
+        "type": "EXACTLY",
+        "params": {
+          "count": 1,
+          "region": {
+            "type": "ROW",
+            "row": 1
+          }
+        },
+        "description": "Exactly 1 person in Row 1 is a Criminal."
+      }
+    },
+    {
+      "id": "D1",
+      "row": 1,
+      "col": "D",
+      "character": {
+        "name": "Derek",
+        "occupation": "Duke"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_D1",
+        "type": "SAME",
+        "params": {
+          "target1": "D1",
+          "target2": "A2"
+        },
+        "description": "Derek and Eliza have the same status."
+      }
+    },
+    {
+      "id": "A2",
+      "row": 2,
+      "col": "A",
+      "character": {
+        "name": "Eliza",
+        "occupation": "Explorer"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_A2",
+        "type": "DIFFERENT",
+        "params": {
+          "target1": "A2",
+          "target2": "B2"
+        },
+        "description": "Eliza and Franz have different statuses."
+      }
+    },
+    {
+      "id": "B2",
+      "row": 2,
+      "col": "B",
+      "character": {
+        "name": "Franz",
+        "occupation": "Financier"
+      },
+      "hidden_status": "CRIMINAL",
+      "clue": {
+        "id": "clue_B2",
+        "type": "EXACTLY",
+        "params": {
+          "count": 2,
+          "region": {
+            "type": "ROW",
+            "row": 2
+          }
+        },
+        "description": "Exactly 2 people in Row 2 are Criminals."
+      }
+    },
+    {
+      "id": "C2",
+      "row": 2,
+      "col": "C",
+      "character": {
+        "name": "Grant",
+        "occupation": "General"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_C2",
+        "type": "SAME",
+        "params": {
+          "target1": "C2",
+          "target2": "C3"
+        },
+        "description": "Grant and Karl have the same status."
+      }
+    },
+    {
+      "id": "D2",
+      "row": 2,
+      "col": "D",
+      "character": {
+        "name": "Hannah",
+        "occupation": "Historian"
+      },
+      "hidden_status": "CRIMINAL",
+      "clue": {
+        "id": "clue_D2",
+        "type": "EXACTLY",
+        "params": {
+          "count": 1,
+          "region": {
+            "type": "COLUMN",
+            "col": "D"
+          }
+        },
+        "description": "Exactly 1 person in Column D is a Criminal."
+      }
+    },
+    {
+      "id": "A3",
+      "row": 3,
+      "col": "A",
+      "character": {
+        "name": "Ivy",
+        "occupation": "Inspector"
+      },
+      "hidden_status": "CRIMINAL",
+      "clue": {
+        "id": "clue_A3",
+        "type": "AT_MOST",
+        "params": {
+          "count": 1,
+          "region": {
+            "type": "COLUMN",
+            "col": "A"
+          }
+        },
+        "description": "At most 1 person in Column A is a Criminal."
+      }
+    },
+    {
+      "id": "B3",
+      "row": 3,
+      "col": "B",
+      "character": {
+        "name": "Jonas",
+        "occupation": "Judge"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_B3",
+        "type": "PARITY",
+        "params": {
+          "parity": "ODD",
+          "region": {
+            "type": "ROW",
+            "row": 4
+          }
+        },
+        "description": "An odd number of people in Row 4 are Criminals."
+      }
+    },
+    {
+      "id": "C3",
+      "row": 3,
+      "col": "C",
+      "character": {
+        "name": "Karl",
+        "occupation": "Knight"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_C3",
+        "type": "EXACTLY",
+        "params": {
+          "count": 1,
+          "region": {
+            "type": "COLUMN",
+            "col": "C"
+          }
+        },
+        "description": "Exactly 1 person in Column C is a Criminal."
+      }
+    },
+    {
+      "id": "D3",
+      "row": 3,
+      "col": "D",
+      "character": {
+        "name": "Leo",
+        "occupation": "Librarian"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_D3",
+        "type": "SAME",
+        "params": {
+          "target1": "D3",
+          "target2": "B3"
+        },
+        "description": "Leo and Jonas have the same status."
+      }
+    },
+    {
+      "id": "A4",
+      "row": 4,
+      "col": "A",
+      "character": {
+        "name": "Mara",
+        "occupation": "Mayor"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_A4",
+        "type": "DIFFERENT",
+        "params": {
+          "target1": "A4",
+          "target2": "B4"
+        },
+        "description": "Mara and Noah have different statuses."
+      }
+    },
+    {
+      "id": "B4",
+      "row": 4,
+      "col": "B",
+      "character": {
+        "name": "Noah",
+        "occupation": "Naval Officer"
+      },
+      "hidden_status": "CRIMINAL",
+      "clue": {
+        "id": "clue_B4",
+        "type": "EXACTLY",
+        "params": {
+          "count": 2,
+          "region": {
+            "type": "COLUMN",
+            "col": "B"
+          }
+        },
+        "description": "Exactly 2 people in Column B are Criminals."
+      }
+    },
+    {
+      "id": "C4",
+      "row": 4,
+      "col": "C",
+      "character": {
+        "name": "Owen",
+        "occupation": "Officer"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_C4",
+        "type": "COUNT_COMPARE",
+        "params": {
+          "operator": "GT",
+          "region1": {
+            "type": "COLUMN",
+            "col": "B"
+          },
+          "region2": {
+            "type": "COLUMN",
+            "col": "D"
+          }
+        },
+        "description": "Column B has more Criminals than Column D."
+      }
+    },
+    {
+      "id": "D4",
+      "row": 4,
+      "col": "D",
+      "character": {
+        "name": "Priya",
+        "occupation": "Physician"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_D4",
+        "type": "EXACTLY",
+        "params": {
+          "count": 1,
+          "region": {
+            "type": "ROW",
+            "row": 3
+          }
+        },
+        "description": "Exactly 1 person in Row 3 is a Criminal."
+      }
+    }
+  ]
+}

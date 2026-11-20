@@ -1,0 +1,346 @@
+{
+  "puzzle_id": "puzzle_4x4_02",
+  "name": "The Harbour Syndicate",
+  "size": 4,
+  "initial_revealed": [
+    "A1",
+    "D2"
+  ],
+  "grid": [
+    {
+      "id": "A1",
+      "row": 1,
+      "col": "A",
+      "character": {
+        "name": "Arthur",
+        "occupation": "Admiral"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_A1",
+        "type": "SAME",
+        "params": {
+          "target1": "A1",
+          "target2": "A2"
+        },
+        "description": "Arthur and Edwin have the same status."
+      }
+    },
+    {
+      "id": "B1",
+      "row": 1,
+      "col": "B",
+      "character": {
+        "name": "Beatrice",
+        "occupation": "Boatswain"
+      },
+      "hidden_status": "CRIMINAL",
+      "clue": {
+        "id": "clue_B1",
+        "type": "EXACTLY",
+        "params": {
+          "count": 1,
+          "region": {
+            "type": "ROW",
+            "row": 1
+          }
+        },
+        "description": "Exactly 1 person in Row 1 is a Criminal."
+      }
+    },
+    {
+      "id": "C1",
+      "row": 1,
+      "col": "C",
+      "character": {
+        "name": "Cedric",
+        "occupation": "Captain"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_C1",
+        "type": "DIFFERENT",
+        "params": {
+          "target1": "C1",
+          "target2": "B1"
+        },
+        "description": "Cedric and Beatrice have different statuses."
+      }
+    },
+    {
+      "id": "D1",
+      "row": 1,
+      "col": "D",
+      "character": {
+        "name": "Diana",
+        "occupation": "Diver"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_D1",
+        "type": "SAME",
+        "params": {
+          "target1": "D1",
+          "target2": "C1"
+        },
+        "description": "Diana and Cedric have the same status."
+      }
+    },
+    {
+      "id": "A2",
+      "row": 2,
+      "col": "A",
+      "character": {
+        "name": "Edwin",
+        "occupation": "Engineer"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_A2",
+        "type": "EXACTLY",
+        "params": {
+          "count": 1,
+          "region": {
+            "type": "ROW",
+            "row": 2
+          }
+        },
+        "description": "Exactly 1 person in Row 2 is a Criminal."
+      }
+    },
+    {
+      "id": "B2",
+      "row": 2,
+      "col": "B",
+      "character": {
+        "name": "Flora",
+        "occupation": "Fisherman"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_B2",
+        "type": "SAME",
+        "params": {
+          "target1": "B2",
+          "target2": "B3"
+        },
+        "description": "Flora and Julia have the same status."
+      }
+    },
+    {
+      "id": "C2",
+      "row": 2,
+      "col": "C",
+      "character": {
+        "name": "George",
+        "occupation": "Guard"
+      },
+      "hidden_status": "CRIMINAL",
+      "clue": {
+        "id": "clue_C2",
+        "type": "EXACTLY",
+        "params": {
+          "count": 1,
+          "region": {
+            "type": "COLUMN",
+            "col": "C"
+          }
+        },
+        "description": "Exactly 1 person in Column C is a Criminal."
+      }
+    },
+    {
+      "id": "D2",
+      "row": 2,
+      "col": "D",
+      "character": {
+        "name": "Hester",
+        "occupation": "Harbourmaster"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_D2",
+        "type": "DIFFERENT",
+        "params": {
+          "target1": "D2",
+          "target2": "D3"
+        },
+        "description": "Hester and Laura have different statuses."
+      }
+    },
+    {
+      "id": "A3",
+      "row": 3,
+      "col": "A",
+      "character": {
+        "name": "Isaac",
+        "occupation": "Inspector"
+      },
+      "hidden_status": "CRIMINAL",
+      "clue": {
+        "id": "clue_A3",
+        "type": "COUNT_COMPARE",
+        "params": {
+          "operator": "GT",
+          "region1": {
+            "type": "COLUMN",
+            "col": "B"
+          },
+          "region2": {
+            "type": "COLUMN",
+            "col": "A"
+          }
+        },
+        "description": "Column B has more Criminals than Column A."
+      }
+    },
+    {
+      "id": "B3",
+      "row": 3,
+      "col": "B",
+      "character": {
+        "name": "Julia",
+        "occupation": "Judge"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_B3",
+        "type": "EXACTLY",
+        "params": {
+          "count": 2,
+          "region": {
+            "type": "ROW",
+            "row": 3
+          }
+        },
+        "description": "Exactly 2 people in Row 3 are Criminals."
+      }
+    },
+    {
+      "id": "C3",
+      "row": 3,
+      "col": "C",
+      "character": {
+        "name": "Kenneth",
+        "occupation": "Knight"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_C3",
+        "type": "SAME",
+        "params": {
+          "target1": "C3",
+          "target2": "C4"
+        },
+        "description": "Kenneth and Oliver have the same status."
+      }
+    },
+    {
+      "id": "D3",
+      "row": 3,
+      "col": "D",
+      "character": {
+        "name": "Laura",
+        "occupation": "Locksmith"
+      },
+      "hidden_status": "CRIMINAL",
+      "clue": {
+        "id": "clue_D3",
+        "type": "EXACTLY",
+        "params": {
+          "count": 1,
+          "region": {
+            "type": "COLUMN",
+            "col": "D"
+          }
+        },
+        "description": "Exactly 1 person in Column D is a Criminal."
+      }
+    },
+    {
+      "id": "A4",
+      "row": 4,
+      "col": "A",
+      "character": {
+        "name": "Martin",
+        "occupation": "Merchant"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_A4",
+        "type": "PARITY",
+        "params": {
+          "parity": "EVEN",
+          "region": {
+            "type": "COLUMN",
+            "col": "B"
+          }
+        },
+        "description": "An even number of people in Column B are Criminals."
+      }
+    },
+    {
+      "id": "B4",
+      "row": 4,
+      "col": "B",
+      "character": {
+        "name": "Nora",
+        "occupation": "Navigator"
+      },
+      "hidden_status": "CRIMINAL",
+      "clue": {
+        "id": "clue_B4",
+        "type": "AT_LEAST",
+        "params": {
+          "count": 1,
+          "region": {
+            "type": "ROW",
+            "row": 4
+          }
+        },
+        "description": "At least 1 person in Row 4 is a Criminal."
+      }
+    },
+    {
+      "id": "C4",
+      "row": 4,
+      "col": "C",
+      "character": {
+        "name": "Oliver",
+        "occupation": "Officer"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_C4",
+        "type": "PARITY",
+        "params": {
+          "parity": "ODD",
+          "region": {
+            "type": "ROW",
+            "row": 4
+          }
+        },
+        "description": "An odd number of people in Row 4 are Criminals."
+      }
+    },
+    {
+      "id": "D4",
+      "row": 4,
+      "col": "D",
+      "character": {
+        "name": "Penelope",
+        "occupation": "Pilot"
+      },
+      "hidden_status": "INNOCENT",
+      "clue": {
+        "id": "clue_D4",
+        "type": "SAME",
+        "params": {
+          "target1": "D4",
+          "target2": "B2"
+        },
+        "description": "Penelope and Flora have the same status."
+      }
+    }
+  ]
+}
