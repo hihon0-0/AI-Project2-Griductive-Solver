@@ -1,0 +1,6 @@
+Bundled fonts (all licensed under the SIL Open Font License 1.1):
+- Merriweather - Copyright The Merriweather Project Authors (https://github.com/SorkinType/Merriweather)
+- Inter - Copyright The Inter Project Authors (https://github.com/rsms/inter)
+- JetBrains Mono - Copyright The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono)
+
+Full license text: https://openfontlicense.org
