@@ -40,6 +40,10 @@ class VariableMapper:
             self.var_to_cell[variable] = cell_id
         return self.cell_to_var[cell_id]
 
+    def get_cell(self, var_id: int) -> str:
+        """Return the cell coordinate associated with a SAT variable."""
+        return self.var_to_cell.get(var_id, "")
+
     def set_grid_size(self, grid_size: int) -> None:
         if grid_size < 1:
             raise ValueError("grid_size must be positive")
@@ -49,6 +53,10 @@ class VariableMapper:
         variable = self._next_aux_var
         self._next_aux_var += 1
         return variable
+
+    def new_aux_var(self) -> int:
+        """Compatibility alias for get_aux_var."""
+        return self.get_aux_var()
 
     def register_grid(self, cell_ids: list[str]) -> None:
         for cell_id in cell_ids:
@@ -144,8 +152,15 @@ class CNFEncoder:
     def _conditional(self, clauses: list[list[int]], selector: int) -> list[list[int]]:
         return [[-selector] + clause for clause in clauses]
 
-    def encode_clue(self, clue_dict: dict) -> list[list[int]]:
+    def encode_clue(
+        self,
+        clue_dict: dict,
+        grid_size: int | None = None,
+    ) -> list[list[int]]:
         """Convert one clue to CNF clauses."""
+        if grid_size is not None:
+            self.mapper.set_grid_size(grid_size)
+
         clue_type = str(clue_dict.get("type", "")).upper()
         params = clue_dict.get("params", {})
         clauses: list[list[int]] = []

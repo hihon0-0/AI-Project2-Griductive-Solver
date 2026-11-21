@@ -17,9 +17,10 @@ def test_variable_mapper():
     assert var_b1 > 0
     assert var_a1 != var_b1
     assert mapper.get_var("a1") == var_a1
-    assert mapper.var_to_cell[var_a1] == "A1"
+    assert mapper.get_cell(var_a1) == "A1"
+    assert mapper.get_cell(9999) == ""
 
-    aux1 = mapper.get_aux_var()
+    aux1 = mapper.new_aux_var()
     aux2 = mapper.get_aux_var()
     assert aux1 >= 1000
     assert aux2 > aux1
@@ -31,9 +32,9 @@ def enumerate_solutions(
     ids: list[str],
     grid_size: int = 3,
 ) -> list[dict[str, bool]]:
-    mapper = VariableMapper(grid_size)
-    encoder = CNFEncoder(mapper, grid_size)
-    clauses = encoder.encode_clue(clue)
+    mapper = VariableMapper()
+    encoder = CNFEncoder(mapper)
+    clauses = encoder.encode_clue(clue, grid_size)
     solutions = []
 
     for values in itertools.product((False, True), repeat=len(ids)):
