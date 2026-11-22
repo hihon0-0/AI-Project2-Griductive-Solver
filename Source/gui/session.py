@@ -1,3 +1,23 @@
+"""Lớp giao tiếp DUY NHẤT giữa GUI và logic (Engine + Agent).
+
+GUI chỉ nói chuyện với `GameSession`; mọi thứ của backend (GameEngine, DeductiveAgent, get_hint,
+load_puzzle) đều được gọi trực tiếp ở đây, không còn module giả (dev_stubs) nào.
+
+Hợp đồng với backend (những gì file này giả định):
+
+  Source.engine.engine.GameEngine(data, entailment_verifier=fn)
+      .get_public_state() -> PublicState(grid_size, revealed_verdicts: dict[str,str],
+                                         revealed_clues: list[dict], unsolved_cells: list[str])
+      .submit_verdict(cell, verdict) -> object có is_valid / status_code / message / revealed_clue
+      .get_character(cell) -> dict(name, occupation)           (tuỳ chọn, thiếu thì đọc từ JSON)
+  Source.agent.agent.DeductiveAgent()
+      .classify_cell(public_state, cell) -> CRIMINAL | INNOCENT | UNKNOWN | INCONSISTENT
+      .get_solution_stream(engine) -> iterator các step(cell_id, verdict, forced_by_clue_ids,
+                                                         sat_queries, new_clue)
+      .metrics (decisions, propagations, backtracks, runtime), .sat_calls, ._clue_cache, .status
+  Source.agent.hint.get_hint(public_state, agent) -> (cell, verdict[, clue_ids]) | None
+  Source.engine.puzzle_io.load_puzzle(path, schema_path) -> dict   (tuỳ chọn)
+"""
 from __future__ import annotations
 
 import copy
@@ -8,17 +28,12 @@ import traceback
 from dataclasses import dataclass, field
 from typing import Any, Iterator, Optional
 
-# Luôn nạp stub core TRƯỚC KHI import agent/engine (agent import core.* ngay đầu file)
-from Source.gui.dev_stubs import install_missing_core, make_stub_engine, StubClassifier
-
-_CORE_STUBS = install_missing_core("Source")
-
-from Source.engine.engine import GameEngine  # noqa: E402
-from Source.agent.agent import DeductiveAgent  # noqa: E402
+from Source.engine.engine import GameEngine
+from Source.agent.agent import DeductiveAgent
 
 try:
     from Source.engine.puzzle_io import load_puzzle as _backend_load_puzzle
-except ImportError:  # thiếu jsonschema
+except ImportError:  # thiếu jsonschema -> đọc JSON thuần
     _backend_load_puzzle = None
 
 try:
@@ -28,7 +43,7 @@ except ImportError:
 
 
 # =========================================================================
-# Kiểu dữ liệu trả về cho GUI (hợp đồng mục 5 của tài liệu phân việc)
+# Kiểu dữ liệu trả về cho GUI
 # =========================================================================
 
 @dataclass
@@ -36,7 +51,7 @@ class VerdictResult:
     is_valid: bool
     message: str
     revealed_clue: Optional[dict] = None
-    code: str = ""   # CORRECT | NOT_PROVABLE | CONTRADICTED | ALREADY_REVEALED | ERROR (rỗng = chưa biết)
+    code: str = ""   # CORRECT | NOT_PROVABLE | CONTRADICTED | ALREADY_REVEALED | ERROR
 
 
 @dataclass
@@ -44,7 +59,7 @@ class VerdictOutcome:
     accepted: bool
     code: str  # CORRECT | NOT_PROVABLE | CONTRADICTED | ALREADY_REVEALED | ERROR
     new_clue: Optional[dict] = None
-    message: str = ""   # nguyên văn thông điệp engine trả về (để báo lỗi cho đúng người)
+    message: str = ""   # nguyên văn thông điệp engine trả về
 
 
 @dataclass
@@ -64,8 +79,33 @@ class StepOutcome:
     message: str = ""
 
 
+_KNOWN_CODES = ("NOT_PROVABLE", "CONTRADICTED", "ALREADY_REVEALED")
+
+
+def _code_of(raw_code: Any) -> str:
+    """Đưa status_code của engine (Enum hoặc str) về mã chuẩn của GUI."""
+    if raw_code is None:
+        return ""
+    name = (getattr(raw_code, "name", None) or str(raw_code)).split(".")[-1].upper()
+    if name == "ALREADY_SOLVED":
+        name = "ALREADY_REVEALED"
+    return name if name in ("CORRECT", *_KNOWN_CODES) else "ERROR"
+
+
+def normalize_verdict(raw: Any) -> VerdictResult:
+    """Kết quả submit_verdict của engine -> VerdictResult."""
+    if raw is None:
+        raise RuntimeError("engine.submit_verdict trả về None")
+    if isinstance(raw, VerdictResult):
+        return raw
+    ok = bool(getattr(raw, "is_valid", getattr(raw, "success", False)))
+    msg = str(getattr(raw, "message", ""))
+    code = "CORRECT" if ok else (_code_of(getattr(raw, "status_code", None)) or _code_of(msg))
+    return VerdictResult(ok, msg, getattr(raw, "revealed_clue", None), code)
+
+
 class _EngineAdapterForAgent:
-    """Mặt nạ để agent luôn nhận VerdictResult dạng object (agent dùng result.is_valid)."""
+    """Agent đọc `result.is_valid`; adapter đảm bảo submit_verdict luôn trả VerdictResult."""
 
     def __init__(self, engine: Any):
         self._engine = engine
@@ -74,21 +114,18 @@ class _EngineAdapterForAgent:
         return self._engine.get_public_state()
 
     def submit_verdict(self, cell: str, verdict: str) -> VerdictResult:
-        return GameSession._normalize_verdict(self._engine.submit_verdict(cell, verdict))
-
-
-_KNOWN_CODES = ("NOT_PROVABLE", "CONTRADICTED", "ALREADY_REVEALED")
+        return normalize_verdict(self._engine.submit_verdict(cell, verdict))
 
 
 class GameSession:
-    """Giao diện DUY NHẤT giữa GUI và backend (Engine + Agent)."""
+    """Giao diện duy nhất giữa GUI và backend."""
 
     def __init__(self):
-        self.stubs: list[str] = list(_CORE_STUBS)
         self.size: int = 3
         self.name: str = ""
         self.terminal: Optional[str] = None  # None | SOLVED | STUCK | INCONSISTENT
         self.log: list[dict] = []
+        self.warnings: list[str] = []        # cảnh báo cấu hình backend (hiện lên thanh trạng thái)
 
         self._puzzle_path: Optional[str] = None
         self._puzzle_data: dict = {}
@@ -96,9 +133,6 @@ class GameSession:
         self._agent: Optional[DeductiveAgent] = None
         self._stream: Optional[Iterator] = None
         self._step_num: int = 0
-        self._use_fallback_loop: bool = False
-        self._stub_classifier = StubClassifier()
-        self._stub_classifier_used = False
 
     @property
     def steps(self) -> int:
@@ -106,104 +140,35 @@ class GameSession:
         return self._step_num
 
     # ------------------------------------------------------------------
-    @staticmethod
-    def _code_of(raw_code: Any) -> str:
-        """Đưa status_code của engine thật (Enum hoặc str) về mã chuẩn của GUI."""
-        if raw_code is None:
-            return ""
-        name = getattr(raw_code, "name", None) or str(raw_code)
-        name = name.split(".")[-1].upper()
-        if name == "ALREADY_SOLVED":
-            name = "ALREADY_REVEALED"
-        return name if name in ("CORRECT", "NOT_PROVABLE", "CONTRADICTED", "ALREADY_REVEALED") else "ERROR"
-
-    @staticmethod
-    def _normalize_verdict(raw: Any) -> VerdictResult:
-        """Chấp nhận tuple (ok, msg, clue) lẫn object có is_valid/status_code/message/revealed_clue."""
-        if raw is None:
-            raise NotImplementedError("submit_verdict chưa được cài đặt (trả về None)")
-        if isinstance(raw, VerdictResult):
-            return raw
-        if isinstance(raw, tuple):
-            ok = bool(raw[0]) if len(raw) > 0 else False
-            msg = str(raw[1]) if len(raw) > 1 else "ERROR"
-            clue = raw[2] if len(raw) > 2 else None
-            return VerdictResult(ok, msg, clue, GameSession._code_of(msg))
-        ok = getattr(raw, "is_valid", getattr(raw, "success", False))
-        msg = str(getattr(raw, "message", "ERROR"))
-        # Engine thật để mã ở status_code, còn message là câu dài -> phải đọc status_code
-        code = GameSession._code_of(getattr(raw, "status_code", None)) or GameSession._code_of(msg)
-        if bool(ok):
-            code = "CORRECT"
-        return VerdictResult(bool(ok), msg, getattr(raw, "revealed_clue", None), code)
-
-    def _engine_submit_works(self) -> bool:
-        """Gọi thử submit_verdict trên một engine TẠM; trả False nếu TV3 còn TODO."""
-        try:
-            probe = GameEngine(copy.deepcopy(self._puzzle_data))
-            unsolved = probe.get_public_state().unsolved_cells
-            if not unsolved:
-                return True
-            return probe.submit_verdict(unsolved[0], "INNOCENT") is not None
-        except NotImplementedError:
-            return False
-        except Exception:
-            return True  # engine thật nhưng báo lỗi: để lỗi lộ ra ở lần gọi thật
-
-    def _classify(self, state, cell):
-        """agent.classify_cell của TV4; nếu còn TODO (NotImplementedError) thì dùng StubClassifier
-        và báo 'agent.classify_cell' vào session.stubs để GUI hiện cảnh báo DEV."""
-        try:
-            return self._agent.classify_cell(state, cell)
-        except NotImplementedError:
-            if not self._stub_classifier_used:
-                self._stub_classifier_used = True
-                if "agent.classify_cell" not in self.stubs:
-                    self.stubs.append("agent.classify_cell")
-            return self._stub_classifier(state, cell)
-
-    def _make_real_engine(self, data: dict):
-        """Dựng GameEngine thật VÀ gắn agent.classify_cell làm entailment_verifier.
-        Thiếu verifier thì engine rơi về chế độ standalone: so với nghiệm ẩn, tức là cho phép ĐOÁN."""
-        verifier = self._classify
+    # Dựng engine + agent
+    # ------------------------------------------------------------------
+    def _make_engine(self, data: dict):
+        """GameEngine gắn agent.classify_cell làm entailment_verifier (để game KHÔNG cho đoán mò)."""
+        verifier = self._agent.classify_cell
         try:
             params = inspect.signature(GameEngine.__init__).parameters
         except (TypeError, ValueError):
             params = {}
         if "entailment_verifier" in params:
-            engine = GameEngine(data, entailment_verifier=verifier)
+            return GameEngine(data, entailment_verifier=verifier)
+        engine = GameEngine(data)
+        if hasattr(engine, "entailment_verifier"):
+            engine.entailment_verifier = verifier
         else:
-            engine = GameEngine(data)
-            if hasattr(engine, "entailment_verifier"):
-                engine.entailment_verifier = verifier
-            else:
-                self.stubs.append("engine.NO_VERIFIER (game se chap nhan doan mo!)")
+            self.warnings.append("GameEngine không nhận entailment_verifier: game sẽ chấp nhận đoán mò!")
         return engine
 
     def _build_engine_and_agent(self):
-        """Dựng mới engine + agent từ self._puzzle_data."""
-        self.stubs = list(_CORE_STUBS)
+        self.warnings = []
         self._agent = DeductiveAgent()   # agent MỚI -> bộ đếm SAT/metrics về 0
-        self._stub_classifier = StubClassifier()
-        self._stub_classifier_used = False
-
-        data = copy.deepcopy(self._puzzle_data)
-        if self._engine_submit_works():
-            engine = self._make_real_engine(data)
-        else:
-            engine = make_stub_engine(GameEngine, data, self._classify)
-            self.stubs.append("engine.submit_verdict")
-        self._engine = engine          # <<< dòng bị thiếu trong bản cũ
-
+        self._engine = self._make_engine(copy.deepcopy(self._puzzle_data))
         self._stream = None
-        self._use_fallback_loop = False
         self._step_num = 0
         self.terminal = "SOLVED" if self.is_solved() else None
         self.log.clear()
         for cid, v in self.statuses().items():
             self.log.append({"step": 0, "cell": cid, "verdict": v, "note": "(Initially revealed)"})
 
-    # ------------------------------------------------------------------
     def load(self, path: str) -> None:
         root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         schema_path = os.path.join(root_dir, "schemas", "puzzle_schema.json")
@@ -214,9 +179,6 @@ class GameSession:
                 data = _backend_load_puzzle(path, schema_path)
             except TypeError:
                 data = _backend_load_puzzle(path)
-            except ImportError:
-                data = None
-
         if data is None:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -235,8 +197,10 @@ class GameSession:
             self._build_engine_and_agent()
 
     # ------------------------------------------------------------------
+    # Truy vấn trạng thái công khai (không bao giờ đọc nghiệm ẩn)
+    # ------------------------------------------------------------------
     def character(self, cell: str) -> dict:
-        """{name, occupation}. Tuyệt đối không đọc hidden_status."""
+        """{name, occupation}."""
         if self._engine is not None and hasattr(self._engine, "get_character"):
             info = self._engine.get_character(cell)
             if isinstance(info, dict):
@@ -255,9 +219,6 @@ class GameSession:
     def clue_of(self, cell: str) -> Optional[dict]:
         if self._engine is None:
             return None
-        rc = getattr(self._engine, "revealed_clues", None)
-        if isinstance(rc, dict):
-            return rc.get(cell)
         for clue in self._engine.get_public_state().revealed_clues:
             if clue.get("id") == f"clue_{cell}" or clue.get("cell") == cell or clue.get("owner") == cell:
                 return clue
@@ -276,6 +237,8 @@ class GameSession:
         return not self._engine.get_public_state().unsolved_cells
 
     # ------------------------------------------------------------------
+    # Người chơi đi tay
+    # ------------------------------------------------------------------
     def submit(self, cell: str, verdict: str, _note: str = "Manual proof accepted") -> VerdictOutcome:
         if self._engine is None:
             return VerdictOutcome(False, "ERROR")
@@ -284,22 +247,22 @@ class GameSession:
             return VerdictOutcome(False, "ALREADY_REVEALED")
 
         try:
-            res = self._normalize_verdict(self._engine.submit_verdict(cell, verdict))
-        except Exception as exc:  # engine/agent lỗi -> báo lên GUI, không để chương trình sập
+            res = normalize_verdict(self._engine.submit_verdict(cell, verdict))
+        except Exception as exc:  # lỗi backend -> báo lên GUI, không để chương trình sập
+            traceback.print_exc()
             self.log.append({"step": None, "cell": cell, "verdict": verdict, "note": f"Error: {exc}"})
             return VerdictOutcome(False, "ERROR", message=f"{type(exc).__name__}: {exc}")
 
-        self._stream = None  # người chơi đi tay -> lần Auto sau dựng generator mới từ KB hiện tại
+        self._stream = None  # đi tay -> lần Auto sau dựng generator mới từ KB hiện tại
         if res.is_valid:
             self._step_num += 1
             if self.terminal == "STUCK":
                 self.terminal = None       # KB vừa có thêm clue mới -> có thể suy diễn tiếp
-            if hasattr(self._agent, "status") and str(self._agent.status).upper() == "STUCK":
+            if str(getattr(self._agent, "status", "")).upper() == "STUCK":
                 self._agent.status = "RUNNING"
             if self.is_solved():
                 self.terminal = "SOLVED"
-            self.log.append({"step": self._step_num, "cell": cell, "verdict": verdict,
-                             "note": _note})
+            self.log.append({"step": self._step_num, "cell": cell, "verdict": verdict, "note": _note})
             return VerdictOutcome(True, "CORRECT", res.revealed_clue)
 
         code = res.code if res.code in _KNOWN_CODES else "ERROR"
@@ -307,95 +270,58 @@ class GameSession:
         self.log.append({"step": None, "cell": cell, "verdict": verdict, "note": note})
         return VerdictOutcome(False, code, message=res.message)
 
-    def _find_forced(self, pub) -> Optional[tuple]:
-        """(cell, verdict, ...) của ô đang bị ép, hoặc None. Thử lần lượt các API của agent;
-        API nào chưa cài (NotImplementedError / sai chữ ký) thì bỏ qua sang API kế tiếp."""
-        a = self._agent
-        for name in ("find_forced", "solve_step"):
-            fn = getattr(a, name, None)
-            if fn is None:
-                continue
+    # ------------------------------------------------------------------
+    # Hint
+    # ------------------------------------------------------------------
+    def _hint_from_backend(self, pub) -> Optional[tuple]:
+        """Gọi Source.agent.hint.get_hint; nếu module không có thì tự quét bằng agent.classify_cell."""
+        if _backend_get_hint is not None:
             try:
-                return fn(pub)          # None nghĩa là "không có ô nào bị ép"
-            except NotImplementedError:
-                continue
-            except TypeError:
-                # Có thể do sai chữ ký (thử API khác) nhưng cũng có thể là lỗi thật trong agent.
-                traceback.print_exc()
-                continue
-        if hasattr(a, "classify_cell"):
-            order = sorted(pub.unsolved_cells, key=lambda c: (int(c[1:]), c[0]))
-            for cid in order:
-                r = self._classify(pub, cid)
-                if r == "INCONSISTENT":
-                    if hasattr(a, "status"):
-                        a.status = "INCONSISTENT"
-                    return None
-                if r in ("CRIMINAL", "INNOCENT"):
-                    return (cid, r, 0)
-            return None
-        raise NotImplementedError("Agent chưa có find_forced / solve_step / classify_cell")
+                n_params = len(inspect.signature(_backend_get_hint).parameters)
+            except (TypeError, ValueError):
+                n_params = 2
+            res = _backend_get_hint(pub, self._agent) if n_params >= 2 else _backend_get_hint(pub)
+            if res is None:
+                return None
+            if hasattr(res, "cell"):   # get_hint trả object thay vì tuple
+                return (res.cell, res.verdict, list(getattr(res, "clue_ids", []) or []))
+            return tuple(res)
+
+        for cid in sorted(pub.unsolved_cells, key=lambda c: (int(c[1:]), c[0])):
+            r = self._agent.classify_cell(pub, cid)
+            if r == "INCONSISTENT":
+                self._agent.status = "INCONSISTENT"
+                return None
+            if r in ("CRIMINAL", "INNOCENT"):
+                return (cid, r, [])
+        return None
 
     def hint(self) -> Optional[HintInfo]:
         if self._engine is None or self._agent is None or self.is_solved():
             return None
         pub = self._engine.get_public_state()
-
-        res, answered = None, False
-        if _backend_get_hint:
-            for args in ((pub, self._agent), (pub,)):
-                try:
-                    res, answered = _backend_get_hint(*args), True
-                    break
-                except (TypeError, NotImplementedError):
-                    continue       # hint.py của TV4 chưa xong -> dùng thẳng agent bên dưới
-        if not answered:
-            res = self._find_forced(pub)
+        res = self._hint_from_backend(pub)
 
         if not res:
-            st = str(getattr(self._agent, "status", "") or "").upper()
-            self.terminal = "INCONSISTENT" if st == "INCONSISTENT" else "STUCK"
+            self._set_terminal_from_agent()
             return None
 
         cell, verdict = res[0], res[1]
-        clue_ids = list(res[2]) if len(res) > 2 and isinstance(res[2], list) else []
+        clue_ids = list(res[2]) if len(res) > 2 and isinstance(res[2], (list, tuple)) else []
         if not clue_ids and hasattr(self._agent, "clues_mentioning"):
-            try:
-                clue_ids = list(self._agent.clues_mentioning(pub, cell))
-            except (NotImplementedError, TypeError):
-                clue_ids = []
+            clue_ids = list(self._agent.clues_mentioning(pub, cell))
         return HintInfo(cell, verdict, clue_ids)
 
-    def _end_state(self) -> StepOutcome:
+    # ------------------------------------------------------------------
+    # Step / Auto
+    # ------------------------------------------------------------------
+    def _set_terminal_from_agent(self) -> StepOutcome:
         st = str(getattr(self._agent, "status", "") or "").upper()
         if self.is_solved() or st == "SOLVED":
             self.terminal = "SOLVED"
         else:
             self.terminal = "INCONSISTENT" if st == "INCONSISTENT" else "STUCK"
         return StepOutcome(self.terminal)
-
-    def _next_step_fallback(self) -> StepOutcome:
-        """Dùng khi agent.get_solution_stream chưa được TV4 cài: tự tìm ô bị ép rồi gửi qua engine."""
-        pub = self._engine.get_public_state()
-        try:
-            found = self._find_forced(pub)
-        except Exception as exc:
-            traceback.print_exc()
-            return StepOutcome("ERROR", message=f"{type(exc).__name__}: {exc}")
-        if not found:
-            return self._end_state()
-        cell, verdict = found[0], found[1]
-        clue_ids = []
-        if hasattr(self._agent, "clues_mentioning"):
-            try:
-                clue_ids = list(self._agent.clues_mentioning(pub, cell))
-            except (NotImplementedError, TypeError):
-                pass
-        out = self.submit(cell, verdict, _note="Auto step (fallback)")
-        if not out.accepted:
-            return StepOutcome("ERROR", message=f"Engine rejected forced verdict {cell}={verdict}: {out.code}")
-        return StepOutcome("SOLVED" if self.terminal == "SOLVED" else "OK",
-                           cell, verdict, clue_ids, out.new_clue)
 
     def next_step(self) -> StepOutcome:
         if self._engine is None or self._agent is None:
@@ -406,41 +332,37 @@ class GameSession:
         if self.terminal in ("STUCK", "INCONSISTENT"):
             return StepOutcome(self.terminal)
 
-        if not self._use_fallback_loop:
-            try:
-                if self._stream is None:
-                    self._stream = iter(self._agent.get_solution_stream(_EngineAdapterForAgent(self._engine)))
-                step = next(self._stream)
-            except StopIteration:
-                self._stream = None
-                return self._end_state()
-            except NotImplementedError:
-                self._stream, self._use_fallback_loop = None, True   # TV4 chưa cài stream
-            except Exception as exc:
-                # Mọi lỗi khác (kể cả AttributeError bên trong agent) phải lộ ra, không được nuốt thành "STUCK".
-                traceback.print_exc()
-                self._stream = None
-                return StepOutcome("ERROR", message=f"{type(exc).__name__}: {exc}")
-            else:
-                self._step_num += 1
-                cell = getattr(step, "cell_id", None)
-                verdict = getattr(step, "verdict", None)
-                clue_ids = list(getattr(step, "forced_by_clue_ids", []))
-                sat_q = getattr(step, "sat_queries", 0)
-                new_clue = getattr(step, "new_clue", None)
-                if self.is_solved():
-                    self.terminal = "SOLVED"
-                note = f"SAT {sat_q}"
-                if clue_ids:
-                    note += f" | via {', '.join(clue_ids)}"
-                if new_clue:
-                    note += f" | +{new_clue.get('id', '?')}"
-                self.log.append({"step": self._step_num, "cell": cell or "?",
-                                 "verdict": verdict or "?", "note": note})
-                return StepOutcome("SOLVED" if self.terminal == "SOLVED" else "OK",
-                                   cell, verdict, clue_ids, new_clue)
-        return self._next_step_fallback()
+        try:
+            if self._stream is None:
+                self._stream = iter(self._agent.get_solution_stream(_EngineAdapterForAgent(self._engine)))
+            step = next(self._stream)
+        except StopIteration:
+            self._stream = None
+            return self._set_terminal_from_agent()
+        except Exception as exc:
+            traceback.print_exc()
+            self._stream = None
+            return StepOutcome("ERROR", message=f"{type(exc).__name__}: {exc}")
 
+        self._step_num += 1
+        cell = getattr(step, "cell_id", None)
+        verdict = getattr(step, "verdict", None)
+        clue_ids = list(getattr(step, "forced_by_clue_ids", []) or [])
+        sat_q = getattr(step, "sat_queries", 0)
+        new_clue = getattr(step, "new_clue", None)
+        if self.is_solved():
+            self.terminal = "SOLVED"
+
+        note = f"SAT {sat_q}"
+        if clue_ids:
+            note += f" | via {', '.join(clue_ids)}"
+        if new_clue:
+            note += f" | +{new_clue.get('id', '?')}"
+        self.log.append({"step": self._step_num, "cell": cell or "?", "verdict": verdict or "?", "note": note})
+        return StepOutcome("SOLVED" if self.terminal == "SOLVED" else "OK", cell, verdict, clue_ids, new_clue)
+
+    # ------------------------------------------------------------------
+    # Metrics (đọc thẳng từ agent)
     # ------------------------------------------------------------------
     def metrics(self) -> dict[str, str | int]:
         a = self._agent
@@ -449,22 +371,16 @@ class GameSession:
         clauses = sum(len(v) for v in cache.values())
         max_var = max((abs(l) for v in cache.values() for cl in v for l in cl), default=0)
         primary = self.size * self.size
-        sc = self._stub_classifier if self._stub_classifier_used else None
-        if sc is not None:   # agent chưa cài -> lấy số liệu từ verifier dự phòng (chỉ để dev nhìn, không dùng cho báo cáo)
-            sat_calls, dec, prop, back, rt = sc.sat_calls, sc.decisions, sc.propagations, sc.backtracks, sc.runtime
-        else:
-            sat_calls = getattr(a, "sat_calls", 0)
-            dec, prop, back = (getattr(m, k, 0) for k in ("decisions", "propagations", "backtracks"))
-            rt = getattr(m, "runtime", 0.0)
+        rt = getattr(m, "runtime", 0.0)
         return {
             "Grid": f"{self.size}x{self.size}",
             "Solved": f"{len(self.statuses())}/{primary}",
             "Primary vars": primary,
             "Aux vars": max(0, max_var - primary),
             "CNF clauses": clauses,
-            "SAT calls": sat_calls,
-            "Decisions": dec,
-            "Propagations": prop,
-            "Backtracks": back,
+            "SAT calls": getattr(a, "sat_calls", 0),
+            "Decisions": getattr(m, "decisions", 0),
+            "Propagations": getattr(m, "propagations", 0),
+            "Backtracks": getattr(m, "backtracks", 0),
             "Runtime": f"{rt * 1000.0:.2f} ms",
         }

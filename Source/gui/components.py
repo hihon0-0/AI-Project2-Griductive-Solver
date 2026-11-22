@@ -376,7 +376,7 @@ ROLE_COLORS = {
 
 
 class CardRenderer:
-    CARD_PADDING = 8
+    CARD_PADDING = 6
 
     @staticmethod
     def draw_card(
@@ -394,6 +394,7 @@ class CardRenderer:
         dimmed: bool = False,
         shake_offset_x: int = 0,
         feedback_tag: Optional[tuple[str, str]] = None,
+        pulse: float = 0.0,
     ) -> Optional[str]:
         pad = CardRenderer.CARD_PADDING
         inner = rect.inflate(-pad, -pad)
@@ -404,6 +405,7 @@ class CardRenderer:
         w, h = inner.width, inner.height
         radius = Theme.RADIUS_CARD
         clipped_clue_text: Optional[str] = None
+        is_hint = (highlight_role == "hint")
 
         if is_revealed and status == "CRIMINAL":
             bg_color = Theme.CRIMINAL_TINT
@@ -411,6 +413,9 @@ class CardRenderer:
         elif is_revealed and status == "INNOCENT":
             bg_color = Theme.INNOCENT_TINT
             border_color = Theme.INNOCENT_BORDER
+        elif is_hint:
+            bg_color = Theme.HINT_TINT
+            border_color = Theme.BORDER_DARK
         elif is_hovered and not is_revealed:
             bg_color = Theme.BG_CARD_HOVER
             border_color = Theme.BORDER_DARK
@@ -418,13 +423,27 @@ class CardRenderer:
             bg_color = Theme.BG_CARD_DOWN
             border_color = Theme.BORDER_DARK
 
+        # Hint: quầng sáng nhấp nhô quanh thẻ được gợi ý (vẽ TRƯỚC thẻ để không che nội dung)
+        if is_hint:
+            glow_alpha = int(70 + 70 * pulse)
+            glow_px = 7
+            gsurf = pygame.Surface((w + glow_px * 2, h + glow_px * 2), pygame.SRCALPHA)
+            for i in range(glow_px, 0, -1):
+                a = int(glow_alpha * (1.0 - i / (glow_px + 1)))
+                pygame.draw.rect(
+                    gsurf, (*Theme.ROLE_HINT, a),
+                    pygame.Rect(glow_px - i, glow_px - i, w + 2 * i, h + 2 * i),
+                    width=2, border_radius=radius + i,
+                )
+            surface.blit(gsurf, (inner.x - glow_px, inner.y - glow_px))
+
         pygame.draw.rect(surface, bg_color, inner, border_radius=radius)
 
         border_w = 2
         if highlight_role and highlight_role in ROLE_COLORS:
             border_color = ROLE_COLORS[highlight_role]
-            border_w = 3
-        if is_selected:
+            border_w = 4 if is_hint else 3
+        if is_selected and highlight_role not in ("hint", "hint_clue"):
             border_color = Theme.BORDER_ACTIVE
             border_w = 3
 
@@ -435,7 +454,7 @@ class CardRenderer:
         char_av_path = character.get("avatar")
         resolver = name_of or (lambda cid: cid)
 
-        is_compact = (h < 132)
+        is_compact = (h < 140)
         id_font = FontManager.mono(10 if is_compact else 11, bold=True)
         name_font = FontManager.get(13 if is_compact else 16, bold=True)
         occ_font = FontManager.mono(9 if is_compact else 11, bold=False)
@@ -485,34 +504,32 @@ class CardRenderer:
 
             block_w = small_av + 6 + max(n_surf.get_width(), o_surf.get_width() if o_surf else 0)
             start_hx = inner.centerx - block_w // 2
-            top_hy = inner.y + (16 if is_compact else 20)
+            top_hy = inner.y + (13 if is_compact else 20)
 
             surface.blit(av_surf, (start_hx, top_hy))
             surface.blit(n_surf, (start_hx + small_av + 6, top_hy))
             if o_surf:
                 surface.blit(o_surf, (start_hx + small_av + 6, top_hy + name_font.get_linesize() - 2))
 
-            clue_top = top_hy + max(small_av, name_font.get_linesize() + (occ_font.get_linesize() if o_surf else 0)) + 8
+            clue_top = top_hy + max(small_av, name_font.get_linesize() + (occ_font.get_linesize() if o_surf else 0)) + (4 if is_compact else 8)
 
             if clue:
                 segs = clue_segments(clue, resolver)
                 plain_full = clue_plain_text(clue, resolver)
-                avail_h = inner.bottom - clue_top - 8
-                avail_w = w - 20
+                avail_h = inner.bottom - clue_top - (5 if is_compact else 8)
+                avail_w = w - (14 if is_compact else 20)
 
-                base_sz = 12 if is_compact else 14
+                # Thử cỡ chữ lớn -> nhỏ cho đến khi cả câu clue nằm vừa trong thẻ.
+                base_sz = 13 if is_compact else 15
+                min_sz = 10
                 chosen_sz = base_sz
-                f_reg = FontManager.get(chosen_sz, bold=False)
-                f_bld = FontManager.get(chosen_sz, bold=True)
-                wrapped_lines = layout_colored_segments(segs, f_reg, f_bld, avail_w)
-
-                for step_down in (1, 2):
-                    if len(wrapped_lines) * f_reg.get_linesize() <= avail_h:
-                        break
-                    chosen_sz = max(9, base_sz - step_down)
+                while True:
                     f_reg = FontManager.get(chosen_sz, bold=False)
                     f_bld = FontManager.get(chosen_sz, bold=True)
                     wrapped_lines = layout_colored_segments(segs, f_reg, f_bld, avail_w)
+                    if len(wrapped_lines) * f_reg.get_linesize() <= avail_h or chosen_sz <= min_sz:
+                        break
+                    chosen_sz -= 1
 
                 line_h = f_reg.get_linesize()
                 max_lines = max(1, avail_h // line_h)
@@ -556,13 +573,15 @@ class CardRenderer:
 
         if dimmed:
             dim_surf = pygame.Surface((w, h), pygame.SRCALPHA)
-            dim_surf.fill((*Theme.BG_MAIN, 145))
+            dim_surf.fill((*Theme.BG_MAIN, 105))
             surface.blit(dim_surf, inner.topleft)
 
         return clipped_clue_text
 
 
 class GridRenderer:
+    MAX_ASPECT = 1.6   # rộng / cao tối đa của một ô
+
     def __init__(self, grid_rect: pygame.Rect, rows: int, cols: Optional[int] = None):
         self.grid_rect = grid_rect
         self.rows = rows
@@ -577,9 +596,13 @@ class GridRenderer:
         area_w = self.grid_rect.width - self.label_margin
         area_h = self.grid_rect.height - self.label_margin
 
-        cell_side = min(area_w // max(1, self.cols), area_h // max(1, self.rows))
-        total_w = cell_side * self.cols
-        total_h = cell_side * self.rows
+        # Ô hình chữ nhật: chiều cao theo chiều cao khả dụng, chiều rộng tận dụng bề ngang
+        # (tối đa MAX_ASPECT x chiều cao) để có thêm chỗ cho chữ của clue.
+        cell_h = area_h // max(1, self.rows)
+        cell_w = min(area_w // max(1, self.cols), int(cell_h * self.MAX_ASPECT))
+        cell_h = min(cell_h, int(cell_w * 1.25))
+        total_w = cell_w * self.cols
+        total_h = cell_h * self.rows
         start_x = area_x + (area_w - total_w) // 2
         start_y = area_y + (area_h - total_h) // 2
 
@@ -587,10 +610,10 @@ class GridRenderer:
             for c in range(self.cols):
                 cell_id = f"{chr(ord('A') + c)}{r + 1}"
                 self.cell_rects[cell_id] = pygame.Rect(
-                    start_x + c * cell_side,
-                    start_y + r * cell_side,
-                    cell_side,
-                    cell_side,
+                    start_x + c * cell_w,
+                    start_y + r * cell_h,
+                    cell_w,
+                    cell_h,
                 )
 
     def draw_labels(self, surface: pygame.Surface):
@@ -692,11 +715,14 @@ class TabbedSidePanel:
         for i, name in enumerate(self.TABS):
             self.tab_rects[name] = pygame.Rect(self.rect.x + i * tw, self.rect.y, tw, 36)
 
-    def set_clue(self, cell_id: str, character_name: str, clue: dict):
+    def set_clue(self, cell_id: str, character_name: str, clue: dict, focus: bool = True):
+        """focus=True: người dùng chủ động xem clue -> chuyển sang tab Clue.
+        focus=False: cập nhật nội dung (vd. do Step/Auto) nhưng GIỮ NGUYÊN tab đang xem."""
         self.cell_id = cell_id
         self.character_name = character_name
         self.clue = clue
-        self.active_tab = "Clue"
+        if focus:
+            self.active_tab = "Clue"
 
     def clear_clue(self):
         self.clue = None
@@ -705,10 +731,16 @@ class TabbedSidePanel:
 
     def set_entries(self, entries: list[dict]):
         old_len = len(self.entries)
+        max_vis = max(1, (self.rect.height - 56) // 20)
+        was_at_bottom = self.scroll_offset >= max(0, old_len - max_vis)
         self.entries = list(entries)
-        max_vis = max(1, (self.rect.height - 48) // 20)
-        if len(self.entries) > old_len and len(self.entries) > max_vis:
-            self.scroll_offset = len(self.entries) - max_vis
+        max_scroll = max(0, len(self.entries) - max_vis)
+        if len(self.entries) < old_len:
+            self.scroll_offset = 0
+        elif was_at_bottom and len(self.entries) > old_len:
+            # Chỉ tự cuộn xuống dòng mới nếu người dùng đang ở cuối (không giật khi đang cuộn lên xem)
+            self.scroll_offset = max_scroll
+        self.scroll_offset = min(self.scroll_offset, max_scroll)
 
     def set_metrics(self, data: dict):
         self.metrics_data = data
@@ -721,7 +753,7 @@ class TabbedSidePanel:
                     return
         if event.type == pygame.MOUSEWHEEL and self.rect.collidepoint(pygame.mouse.get_pos()):
             if self.active_tab == "Trace":
-                max_vis = max(1, (self.rect.height - 48) // 20)
+                max_vis = max(1, (self.rect.height - 56) // 20)
                 max_scroll = max(0, len(self.entries) - max_vis)
                 self.scroll_offset = max(0, min(max_scroll, self.scroll_offset - event.y))
 
@@ -807,6 +839,14 @@ class TabbedSidePanel:
             v_surf = font.render(verdict, True, v_col)
             surface.blit(p_surf, (area.x, y))
             surface.blit(v_surf, (area.x + p_surf.get_width(), y))
+            note = str(entry.get("note", ""))
+            if note:
+                nx = area.x + p_surf.get_width() + v_surf.get_width() + 8
+                room = area.right - nx
+                if room > 30:
+                    note_font = FontManager.mono(10)
+                    n_surf = note_font.render(truncate_text(note, note_font, room), True, Theme.TEXT_MUTED)
+                    surface.blit(n_surf, (nx, y))
             y += 20
 
     def _draw_metrics_tab(self, surface: pygame.Surface, area: pygame.Rect):

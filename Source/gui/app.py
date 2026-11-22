@@ -35,20 +35,30 @@ from Source.gui.components import (
 
 
 class GriductiveApp:
-    WINDOW_WIDTH = 1240
-    WINDOW_HEIGHT = 760
+    WINDOW_WIDTH = 1280
+    WINDOW_HEIGHT = 840
     FPS = 60
+
+    @classmethod
+    def _window_size(cls) -> tuple[int, int]:
+        """Cửa sổ lớn để ô bài to, nhưng không vượt quá màn hình thực tế."""
+        w, h = cls.WINDOW_WIDTH, cls.WINDOW_HEIGHT
+        try:
+            dw, dh = pygame.display.get_desktop_sizes()[0]
+            w = min(w, max(960, dw - 40))
+            h = min(h, max(680, dh - 110))
+        except Exception:
+            pass
+        return w, h
 
     def __init__(self):
         pygame.init()
         pygame.display.set_caption("Griductive No-Guess Solver (CSC14003)")
+        size = self._window_size()
         try:
-            self.screen = pygame.display.set_mode(
-                (self.WINDOW_WIDTH, self.WINDOW_HEIGHT),
-                pygame.SCALED | pygame.RESIZABLE,
-            )
+            self.screen = pygame.display.set_mode(size, pygame.SCALED | pygame.RESIZABLE)
         except pygame.error:
-            self.screen = pygame.display.set_mode((self.WINDOW_WIDTH, self.WINDOW_HEIGHT))
+            self.screen = pygame.display.set_mode(size)
 
         self.clock = pygame.time.Clock()
         self.running = True
@@ -131,27 +141,27 @@ class GriductiveApp:
         )
 
         # Cột phải: Tabbed Side Panel (Clue / Trace / Metrics)
-        right_w = max(270, int(w * 0.24))
+        right_w = max(270, int(w * 0.22))
         body_y = 64
         body_h = h - body_y - pad
         self.side_panel = TabbedSidePanel(pygame.Rect(w - pad - right_w, body_y, right_w, body_h))
 
-        # Khu chính bên trái + giữa: Bàn cờ rộng rãi (chiếm ~72% chiều rộng)
+        # Khu chính bên trái + giữa: Bàn cờ rộng rãi
         main_x = pad
         main_w = w - right_w - pad * 3
         action_h = 36
         status_h = 50
         # Chừa phần trên bên trái cho tiêu đề & thông tin màn chơi thoáng như game gốc
-        grid_top = 86
-        grid_h = h - grid_top - status_h - action_h - pad - 16
+        grid_top = 80
+        grid_h = h - grid_top - status_h - action_h - pad - 14
         self.grid_rect = pygame.Rect(main_x, grid_top, main_w, grid_h)
 
         # Căn thanh trạng thái và dãy nút hành động gọn gàng dưới lưới
-        bar_w = min(main_w, 660)
+        bar_w = min(main_w, 720)
         bar_x = main_x + (main_w - bar_w) // 2
-        self.status_bar = StatusBar(pygame.Rect(bar_x, grid_top + grid_h + 8, bar_w, status_h))
+        self.status_bar = StatusBar(pygame.Rect(bar_x, grid_top + grid_h + 6, bar_w, status_h))
 
-        ay = grid_top + grid_h + status_h + 16
+        ay = grid_top + grid_h + status_h + 14
         gap = 10
         btn_specs = [
             ("Hint",    (215, 150, 35), (235, 172, 55)),
@@ -197,10 +207,13 @@ class GriductiveApp:
             self.side_panel.clear_clue()
             self._stop_auto()
             self._sync_ui_from_session()
-            self.status_bar.set_status(
-                f"Loaded '{self.session.name}' ({self.session.size}x{self.session.size}). Click a card to begin.",
-                "info",
-            )
+            if self.session.warnings:
+                self.status_bar.set_status("WARNING: " + "; ".join(self.session.warnings), "warning")
+            else:
+                self.status_bar.set_status(
+                    f"Loaded '{self.session.name}' ({self.session.size}x{self.session.size}). Click a card to begin.",
+                    "info",
+                )
         except Exception as e:
             self.status_bar.set_status(f"Error loading puzzle: {e}", "contradicted")
 
@@ -347,21 +360,15 @@ class GriductiveApp:
                 "warning",
             )
             return
-        self.selected_cell = hint_info.cell
+        # Gợi ý = tô sáng thẻ có thể suy ra (viền ngọc + quầng sáng) và các thẻ chứa clue liên quan (viền hồng).
+        self.selected_cell = None
         self.cell_highlights.clear()
         self.cell_highlights[hint_info.cell] = "hint"
-        owner_cells = []
         for clue_id in hint_info.clue_ids:
             owner = self.session.clue_owner(clue_id)
-            if owner:
-                owner_cells.append(owner)
-                if owner != hint_info.cell:
-                    self.cell_highlights[owner] = "hint_clue"
-        via_txt = f" (see clues at {', '.join(owner_cells)})" if owner_cells else ""
-        self.status_bar.set_status(
-            f"HINT: {self._name_of(hint_info.cell)} ({hint_info.cell}) can be proved {hint_info.verdict}{via_txt}.",
-            "not_provable",
-        )
+            if owner and owner != hint_info.cell:
+                self.cell_highlights[owner] = "hint_clue"
+        self.status_bar.set_status("Hint: the glowing card can be proved. Pink cards hold the clues it follows from.", "not_provable")
         self._sync_ui_from_session()
 
     def do_step(self):
@@ -376,7 +383,7 @@ class GriductiveApp:
         if step_out.kind in ("OK", "SOLVED") and step_out.cell:
             cid = step_out.cell
             is_solved_now = (step_out.kind == "SOLVED")
-            self.selected_cell = cid
+            self.selected_cell = None
             self.cell_highlights.clear()
             self.cell_highlights[cid] = "hint"
 
@@ -393,7 +400,8 @@ class GriductiveApp:
             # Cập nhật tab Clue bên phải nhưng chưa tô highlight vùng của clue mới
             clue_obj = self.session.clue_of(cid)
             if clue_obj:
-                self.side_panel.set_clue(cid, self._name_of(cid), clue_obj)
+                # focus=False: không giật tab đang xem (Trace/Metrics) khi Auto chạy
+                self.side_panel.set_clue(cid, self._name_of(cid), clue_obj, focus=False)
 
             # Đặt nhịp nháy viền clue 0.35s trước khi lật thẻ
             self.clue_flash_timer = 0.35
@@ -491,7 +499,9 @@ class GriductiveApp:
                 if clicked_pill:
                     continue
 
-            # 5. Các nút hành động
+            # 5. Các nút hành động (đã xử lý thì KHÔNG để click rơi xuống bước click lưới,
+            #    nếu không highlight của Hint/Step bị xoá ngay lập tức)
+            button_clicked = True
             if self.btn_load.handle_event(event):
                 self.open_file_dialog()
             elif self.btn_restart.handle_event(event):
@@ -502,16 +512,18 @@ class GriductiveApp:
                 self._safe(self.do_step)
             elif self.btn_auto.handle_event(event):
                 self._safe(self.toggle_auto)
+            else:
+                button_clicked = False
 
             self.side_panel.handle_event(event)
 
-            # 6. Click lưới thẻ
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if self.grid_renderer:
+            # 6. Click lưới thẻ (bỏ qua click trên nút / panel bên phải để không mất highlight đang xem)
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not button_clicked:
+                if self.grid_renderer and not self.side_panel.rect.collidepoint(event.pos):
                     clicked = self.grid_renderer.get_cell_at(event.pos)
                     if clicked:
                         self.select_cell(clicked, open_popover_if_unrevealed=True)
-                    else:
+                    elif self.grid_rect.collidepoint(event.pos):
                         self.selected_cell = None
                         self.cell_highlights.clear()
 
@@ -623,21 +635,22 @@ class GriductiveApp:
             lbl = pill_font.render(str(idx + 1), True, fg)
             self.screen.blit(lbl, lbl.get_rect(center=r.center))
 
-        if self.session.stubs:
-            stub_txt = f"DEV STUBS: {', '.join(self.session.stubs)}"
-            stub_surf = FontManager.mono(11, bold=True).render(stub_txt, True, Theme.WARNING_COLOR)
-            self.screen.blit(stub_surf, (self.btn_help.rect.left - stub_surf.get_width() - 14, 24))
-
         # 2. Lưới thẻ bài ở giữa
         hovered_tooltip: Optional[str] = None
         if self.grid_renderer:
             self.grid_renderer.draw_labels(self.screen)
             revealed_map = self.session.statuses()
             has_active_hl = bool(self.cell_highlights)
+            pulse = 0.5 + 0.5 * math.sin(now * 5.0)
 
             pending_cid = self.pending_step_anim["cell"] if self.pending_step_anim else None
 
-            for cell_id, rect in self.grid_renderer.cell_rects.items():
+            # Vẽ thẻ được Hint/Step chiếu sáng sau cùng để quầng sáng không bị thẻ kế bên đè lên
+            draw_order = sorted(
+                self.grid_renderer.cell_rects.items(),
+                key=lambda kv: 1 if self.cell_highlights.get(kv[0]) == "hint" else 0,
+            )
+            for cell_id, rect in draw_order:
                 is_rev = (cell_id in revealed_map) and (cell_id != pending_cid)
                 hl_role = self.cell_highlights.get(cell_id)
                 # Nháy viền clue khi đang ở nhịp suy luận Step/Auto
@@ -646,7 +659,8 @@ class GriductiveApp:
                         hl_role = None
 
                 is_sel = (cell_id == self.selected_cell)
-                is_dim = has_active_hl and (hl_role is None) and not is_sel
+                # Chỉ làm mờ thẻ ĐÃ LẬT không liên quan. Thẻ còn úp luôn rõ nét để không bị nhầm là đã lật.
+                is_dim = has_active_hl and (hl_role is None) and not is_sel and is_rev
 
                 if cell_id in self.flip_anims:
                     anim = self.flip_anims[cell_id]
@@ -660,7 +674,7 @@ class GriductiveApp:
                         target_status=anim["status"],
                         target_clue=anim["clue"],
                         is_selected=is_sel,
-                        highlight_role=hl_role,
+                        highlight_role=None if hl_role == "hint" else hl_role,
                         name_of=self._name_of,
                     )
                     continue
@@ -683,6 +697,7 @@ class GriductiveApp:
                     dimmed=is_dim,
                     shake_offset_x=self._compute_shake_x(cell_id, now),
                     feedback_tag=fb_tag,
+                    pulse=pulse,
                 )
                 if cell_id == self.hovered_cell and clipped:
                     hovered_tooltip = clipped

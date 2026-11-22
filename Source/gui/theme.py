@@ -29,6 +29,7 @@ class Theme:
     INNOCENT_BORDER = (46,  138, 78)
     CRIMINAL_TINT   = (242, 208, 204)
     CRIMINAL_BORDER = (195, 58,  52)
+    HINT_TINT       = (219, 242, 234)   # nền thẻ đang được Hint / Step chiếu sáng
 
     # Nút bấm
     BG_BUTTON     = (52,  112, 168)
