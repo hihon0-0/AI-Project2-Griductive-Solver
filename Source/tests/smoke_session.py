@@ -1,10 +1,11 @@
 import sys, traceback
 sys.path.insert(0, ".")
 from Source.gui.session import GameSession
+
 s = GameSession()
-print("stubs:", s.stubs)
+print("warnings:", s.warnings)
 s.load(sys.argv[1])
-print("stubs after load:", s.stubs)
+print("warnings after load:", s.warnings)
 print("size", s.size, "name", s.name)
 print("statuses:", s.statuses())
 print("is_solved:", s.is_solved(), "terminal:", s.terminal)
