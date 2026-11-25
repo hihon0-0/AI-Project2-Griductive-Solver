@@ -72,7 +72,8 @@ def test_agent_hint_generation():
     )
     hint = get_hint(pub_state)
     assert hint is not None
-    cell_id, verdict = hint
+    cell_id, verdict, clue_ids = hint
+    assert clue_ids == ["clue_A1"]
     assert cell_id == "B1"
     assert verdict == "INNOCENT"
 
@@ -164,5 +165,19 @@ def test_fake_uniqueness():
 
 def test_fake_hint():
     state = GameEngine(PUZZLE).get_public_state()
-    assert get_hint(state, _agent()) == ("B1", CRIMINAL)
+    assert get_hint(state, _agent())[:2] == ("B1", CRIMINAL)
     assert get_hint(GameEngine(_weak_puzzle()).get_public_state(), _agent()) is None
+
+
+def test_hint_prefers_fewest_clues_and_lists_the_whole_proof():
+    """5x5_01 after A2: B2 comes first in row-major order but needs two clues, C2 needs one."""
+    from pathlib import Path
+    from Source.agent.agent import DeductiveAgent
+    from Source.agent.hint import proof_clues
+    from Source.engine.puzzle_io import load_puzzle
+
+    engine = GameEngine(load_puzzle(str(Path(__file__).parents[2] / "data" / "puzzle_5x5_01.json")))
+    assert engine.submit_verdict("A2", "INNOCENT").is_valid
+    state, agent = engine.get_public_state(), DeductiveAgent()
+    assert get_hint(state, agent) == ("C2", "CRIMINAL", ["clue_C3"])
+    assert proof_clues(agent, state, "B2", "INNOCENT") == ["clue_C3", "clue_A2"]
