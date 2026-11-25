@@ -92,3 +92,43 @@ def test_engine_restart():
     assert len(pub.revealed_verdicts) == 1
     assert "A1" in pub.revealed_verdicts
     assert "B1" not in pub.revealed_verdicts
+
+def test_engine_get_character_alias():
+    puzzle = load_puzzle(SAMPLE_PATH)
+    engine = GameEngine(puzzle)
+
+    char = engine.get_character("A1")
+    assert isinstance(char, dict)
+    assert char["name"] == "Abel"
+    assert char["occupation"] == "Baker"
+    assert "avatar" in char
+
+    assert engine.get_character("Z9") is None
+
+def test_engine_deepcopy_immutability():
+    puzzle = load_puzzle(SAMPLE_PATH)
+    engine = GameEngine(puzzle)
+
+    pub1 = engine.get_public_state()
+    # Mutate the revealed clues list from outside
+    pub1.revealed_clues[0]["params"]["mutated"] = True
+    pub1.revealed_verdicts["A1"] = "HACKED"
+
+    pub2 = engine.get_public_state()
+    assert "mutated" not in pub2.revealed_clues[0].get("params", {})
+    assert pub2.revealed_verdicts["A1"] == "INNOCENT"
+
+def test_engine_is_solved_full_board():
+    puzzle = load_puzzle(SAMPLE_PATH)
+    engine = GameEngine(puzzle)
+
+    assert not engine.is_solved()
+    # Reveal all remaining 8 cells with their true statuses
+    for cell in puzzle["grid"]:
+        cid = cell["id"]
+        if cid not in engine.revealed_statuses:
+            res = engine.submit_verdict(cid, cell["hidden_status"])
+            assert res.is_valid
+
+    assert engine.is_solved()
+

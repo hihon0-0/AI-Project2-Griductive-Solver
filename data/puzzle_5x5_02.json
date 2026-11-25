@@ -514,12 +514,15 @@
       "hidden_status": "CRIMINAL",
       "clue": {
         "id": "clue_E5",
-        "type": "FACT",
+        "type": "EXACTLY",
         "params": {
-          "target": "E5",
-          "status": "CRIMINAL"
+          "count": 2,
+          "region": {
+            "type": "COLUMN",
+            "col": "E"
+          }
         },
-        "description": "Yuri is a Criminal."
+        "description": "Yuri admits: Exactly 2 people in Column E are Criminals."
       }
     }
   ]

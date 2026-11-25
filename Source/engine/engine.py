@@ -77,6 +77,13 @@ class GameEngine:
         """
         return self._characters.get(cell_id)
 
+    def get_character(self, cell_id: str) -> Optional[dict[str, str]]:
+        """Alias returning dict format for GUI session compatibility."""
+        char = self.get_character_info(cell_id)
+        if char:
+            return {"name": char.name, "occupation": char.occupation, "avatar": char.avatar or ""}
+        return None
+
     def is_solved(self) -> bool:
         """Returns True if all cells on the board have been proved and revealed."""
         return len(self.revealed_statuses) == len(self._hidden_solution)
