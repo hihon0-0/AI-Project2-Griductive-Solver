@@ -42,7 +42,8 @@ Returns
 
 from __future__ import annotations
 
-from typing import Optional
+import copy
+from typing import Iterable, Optional
 import time
 
 from .solver_metrics import SolverMetrics
@@ -66,6 +67,11 @@ class DPLLSolver:
 
     def __init__(self) -> None:
         self.metrics = SolverMetrics()
+        self.total_metrics = SolverMetrics()
+
+    def reset_total_metrics(self) -> None:
+        """Reset cumulative session metrics back to zero."""
+        self.total_metrics.reset()
 
     # ------------------------------------------------------------------ #
     #  Public entry-point                                                   #
@@ -75,10 +81,18 @@ class DPLLSolver:
         self,
         clauses: list[list[int]],
         assumptions: list[int] | None = None,
+        required_vars: Iterable[int] | None = None,
     ) -> tuple[bool, Optional[dict[int, bool]], SolverMetrics]:
         """Solve the CNF *clauses* under optional *assumptions*.
 
-        Returns ``(is_sat, model, metrics)``.
+        Args:
+            clauses: List of clauses (DIMACS format).
+            assumptions: Optional list of unit literals that must hold.
+            required_vars: Optional iterable of variable IDs that must appear
+                in the returned model even if unmentioned in clauses.
+
+        Returns:
+            (is_sat, model, metrics_snapshot)
         """
         # Reset metrics for this invocation
         self.metrics.reset()
@@ -92,8 +106,10 @@ class DPLLSolver:
             for lit in assumptions:
                 working_clauses.append([lit])
 
-        # Collect all variable ids
+        # Collect all variable ids from clauses and required_vars
         all_vars = _collect_variables(working_clauses)
+        if required_vars:
+            all_vars |= {abs(v) for v in required_vars}
 
         # Start empty assignment
         assignment: dict[int, bool] = {}
@@ -101,7 +117,11 @@ class DPLLSolver:
         sat, model = self._dpll(working_clauses, assignment, all_vars)
 
         self.metrics.stop_timer()
-        return sat, model, self.metrics
+        self.metrics.sat_calls = 1
+        self.total_metrics.add(self.metrics)
+
+        # Return a detached copy of metrics so subsequent solves don't mutate caller references
+        return sat, model, copy.copy(self.metrics)
 
     # ------------------------------------------------------------------ #
     #  Core recursive DPLL                                                  #

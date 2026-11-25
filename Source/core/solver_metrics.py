@@ -14,6 +14,8 @@ Usage:
     print(metrics.summary())
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 import time
 
@@ -27,6 +29,7 @@ class SolverMetrics:
     backtracks: int = 0
     conflicts: int = 0
     runtime: float = 0.0
+    sat_calls: int = 0
 
     # ---- Internal timing helpers (not part of public API) ----
     _start_time: float = field(default=0.0, repr=False)
@@ -50,6 +53,15 @@ class SolverMetrics:
     def record_conflict(self) -> None:
         """Call when an empty clause (conflict) is detected."""
         self.conflicts += 1
+
+    def add(self, other: SolverMetrics) -> None:
+        """Accumulate metrics from another run."""
+        self.decisions += other.decisions
+        self.propagations += other.propagations
+        self.backtracks += other.backtracks
+        self.conflicts += other.conflicts
+        self.runtime += other.runtime
+        self.sat_calls += other.sat_calls if other.sat_calls > 0 else 1
 
     # ------------------------------------------------------------------ #
     #  Timer                                                               #
@@ -76,12 +88,14 @@ class SolverMetrics:
         self.backtracks = 0
         self.conflicts = 0
         self.runtime = 0.0
+        self.sat_calls = 0
         self._start_time = 0.0
 
     def summary(self) -> str:
         """Return a human-readable multi-line summary."""
         return (
             f"SolverMetrics(\n"
+            f"  sat_calls    = {self.sat_calls}\n"
             f"  decisions    = {self.decisions}\n"
             f"  propagations = {self.propagations}\n"
             f"  backtracks   = {self.backtracks}\n"

@@ -634,6 +634,60 @@ class TestCorrectnessStress:
         assert m.conflicts >= 1
 
 
+# ======================================================================== #
+#  11. Enhancements: required_vars, metrics copy, and total_metrics         #
+# ======================================================================== #
+
+class TestEnhancements:
+    """Tests for required_vars inclusion and metrics history/accumulation."""
+
+    def test_required_vars_included_in_model(self):
+        """Unrevealed/unreferenced variables in required_vars must appear in model."""
+        solver = _make_solver()
+        # Formula only refers to var 1 and 2
+        clauses = [[1, 2]]
+        # Required vars includes 3, 4, 9 (e.g., unopened board cells)
+        sat, model, _ = solver.solve(clauses, required_vars=[1, 2, 3, 4, 9])
+        assert sat is True
+        assert model is not None
+        for v in [1, 2, 3, 4, 9]:
+            assert v in model, f"Variable {v} missing from satisfying model"
+
+    def test_metrics_immutability_in_history(self):
+        """Each solve call returns an independent copy so history lists are not mutated."""
+        solver = _make_solver()
+        history = []
+
+        _, _, m1 = solver.solve([[1, 2], [-1, 2], [1, -2], [-1, -2]]) # requires backtrack
+        history.append(m1)
+        prev_backtracks = m1.backtracks
+        assert prev_backtracks >= 1
+
+        # Next call that requires 0 backtracks
+        _, _, m2 = solver.solve([[1]])
+        history.append(m2)
+
+        # Ensure previous metrics snapshot in history was NOT reset to 0
+        assert history[0].backtracks == prev_backtracks
+        assert history[1].sat_calls == 1
+
+    def test_total_metrics_accumulation_and_reset(self):
+        """Total metrics correctly accumulates calls and resets on demand."""
+        solver = _make_solver()
+        solver.reset_total_metrics()
+
+        solver.solve([[1]])
+        solver.solve([[1, 2]])
+        solver.solve([[1], [-1]])
+
+        assert solver.total_metrics.sat_calls == 3
+        assert solver.total_metrics.runtime > 0
+
+        solver.reset_total_metrics()
+        assert solver.total_metrics.sat_calls == 0
+        assert solver.total_metrics.runtime == 0.0
+
+
 if __name__ == '__main__':
     # 1. Run baseline tests
     baseline_tests = [
@@ -658,6 +712,7 @@ if __name__ == '__main__':
         TestEdgeCases,
         TestGriductiveScenario,
         TestCorrectnessStress,
+        TestEnhancements,
     ]
     total = len(baseline_tests)
     passed = len(baseline_tests)
