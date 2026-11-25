@@ -95,20 +95,42 @@ class DeductiveAgent:
             return INCONSISTENT
         return self._verdict(kb, cell_id.upper())
 
-    def find_forced(self, state: PublicState) -> Optional[tuple[str, str, int]]:
-        """First forced cell in row-major order: (cell_id, verdict, sat_queries).
-        Returns None and sets self.status to STUCK / INCONSISTENT when nothing is forced."""
+    def proof_clues(self, state: PublicState, cell: str, verdict: str) -> list[str]:
+        """Minimal (not necessarily smallest) set of revealed clues that, with the proved verdicts,
+        still forces `verdict`: drop one clue at a time while the refutation stays UNSAT."""
+        v = self.mapper.get_var(cell)
+        kb = self.build_kb(state)
+        facts = kb[len(kb) - len(state.revealed_verdicts):]   # build_kb appends verdict units last
+        refute = [-v] if verdict == CRIMINAL else [v]
+        keep = list(state.revealed_clues)
+        for clue in list(keep):
+            rest = [c for c in keep if c is not clue]
+            if not self._sat([cl for c in rest for cl in self.encode_clue(c)] + facts, refute):
+                keep = rest
+        return [c["id"] for c in keep]
+
+    def find_forced(self, state: PublicState) -> Optional[tuple[str, str, int, list[str]]]:
+        """The forced cell needing the fewest clues (ties: row-major): (cell_id, verdict, sat_queries, clue_ids).
+        Hint, Step and Auto all use this. Returns None and sets self.status to STUCK / INCONSISTENT."""
         before = self.sat_calls
         kb = self.build_kb(state)
         if not self._sat(kb, []):
             self.status = INCONSISTENT
             return None
+        best = None
         for cell in sorted(state.unsolved_cells, key=row_major_key):
             verdict = self._verdict(kb, cell)
-            if verdict != UNKNOWN:
-                return cell, verdict, self.sat_calls - before
-        self.status = STUCK
-        return None
+            if verdict == UNKNOWN:
+                continue
+            clues = self.proof_clues(state, cell, verdict)
+            if best is None or len(clues) < len(best[2]):
+                best = (cell, verdict, clues)
+            if len(clues) <= 1:   # nothing can need fewer
+                break
+        if best is None:
+            self.status = STUCK
+            return None
+        return best[0], best[1], self.sat_calls - before, best[2]
 
     def solve_step(self, public_state: PublicState) -> Optional[tuple[str, str]]:
         """Finds next logically forced verdict. Returns (cell_id, verdict) or None."""
@@ -133,7 +155,7 @@ class DeductiveAgent:
             found = self.find_forced(state)
             if found is None:
                 return
-            cell, verdict, queries = found
+            cell, verdict, queries, clue_ids = found
             result = engine.submit_verdict(cell, verdict)
             if not result.is_valid:  # an entailed verdict is only rejected if encoder/solver/puzzle is wrong
                 raise RuntimeError(f"Engine rejected forced verdict {cell}={verdict}: {result.message}")
@@ -141,7 +163,7 @@ class DeductiveAgent:
                 step_number=len(self.trace) + 1,
                 cell_id=cell,
                 verdict=verdict,
-                forced_by_clue_ids=self.clues_mentioning(state, cell),
+                forced_by_clue_ids=clue_ids,
                 new_clue=result.revealed_clue,
                 active_clue_ids=[c["id"] for c in state.revealed_clues],
                 sat_queries=queries,
