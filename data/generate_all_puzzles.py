@@ -180,7 +180,7 @@ def get_puzzle_3x3_02() -> dict:
                 "clue": {
                     "id": "clue_C2", "type": "AT_MOST",
                     "params": {"count": 1, "region": {"type": "COLUMN", "col": "B"}},
-                    "description": "At most 1 person in Column B is a Criminal."
+                    "description": "Fiona's Sketch: At most 1 person in Column B is a Criminal. (Red Herring - Column B was already solved!)"
                 }
             },
             {
@@ -190,7 +190,7 @@ def get_puzzle_3x3_02() -> dict:
                 "clue": {
                     "id": "clue_A3", "type": "PARITY",
                     "params": {"parity": "EVEN", "region": {"type": "NEIGHBORS", "cell": "B2"}},
-                    "description": "An even number of neighbors of Edward are Criminals."
+                    "description": "George's Clue: An even number of neighbors of Edward are Criminals."
                 }
             },
             {
@@ -204,7 +204,7 @@ def get_puzzle_3x3_02() -> dict:
                         "region1": {"type": "COLUMN", "col": "A"},
                         "region2": {"type": "COLUMN", "col": "C"}
                     },
-                    "description": "Column A has more Criminals than Column C."
+                    "description": "Helen's Ledger: Column A has more Criminals than Column C."
                 }
             },
             {
@@ -212,9 +212,9 @@ def get_puzzle_3x3_02() -> dict:
                 "character": {"name": "Ian", "occupation": "Sailor"},
                 "hidden_status": "INNOCENT",
                 "clue": {
-                    "id": "clue_C3", "type": "FACT",
-                    "params": {"target": "C3", "status": "INNOCENT"},
-                    "description": "Ian is Innocent."
+                    "id": "clue_C3", "type": "DIFFERENT",
+                    "params": {"target1": "C3", "target2": "B2"},
+                    "description": "Ian whispers: Ian and Edward have different statuses."
                 }
             }
         ]
@@ -1106,9 +1106,9 @@ def get_puzzle_5x5_02() -> dict:
                 "character": {"name": "Yuri", "occupation": "Yardmaster"},
                 "hidden_status": "CRIMINAL",
                 "clue": {
-                    "id": "clue_E5", "type": "FACT",
-                    "params": {"target": "E5", "status": "CRIMINAL"},
-                    "description": "Yuri is a Criminal."
+                    "id": "clue_E5", "type": "EXACTLY",
+                    "params": {"count": 2, "region": {"type": "COLUMN", "col": "E"}},
+                    "description": "Yuri admits: Exactly 2 people in Column E are Criminals."
                 }
             }
         ]

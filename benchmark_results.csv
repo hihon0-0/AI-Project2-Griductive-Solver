@@ -1,7 +1,7 @@
 puzzle,size,primary_vars,aux_vars,clauses,sat_calls,decisions,propagations,backtracks,steps,runtime_ms,solver_ms,unique,status
-puzzle_3x3_01,3x3,9,8,66,35,0,231,0,8,1.79,1.18,True,SOLVED
-puzzle_3x3_02,3x3,9,11,319,33,0,215,0,8,3.55,2.85,True,SOLVED
-puzzle_4x4_01,4x4,16,12,194,59,4,868,0,14,10.91,9.47,True,SOLVED
-puzzle_4x4_02,4x4,16,13,189,83,38,852,0,14,8.36,6.92,True,SOLVED
-puzzle_5x5_01,5x5,25,18,484,141,101,2417,0,22,34.7,31.39,True,SOLVED
-puzzle_5x5_02,5x5,25,21,496,72,34,1670,0,23,66.05,62.19,True,SOLVED
+puzzle_3x3_01,3x3,9,8,66,35,0,231,0,8,3.15,1.77,True,SOLVED
+puzzle_3x3_02,3x3,9,11,319,33,0,215,0,8,6.87,5.29,True,SOLVED
+puzzle_4x4_01,4x4,16,12,194,59,4,868,0,14,32.59,29.23,True,SOLVED
+puzzle_4x4_02,4x4,16,13,189,83,38,852,0,14,37.14,32.2,True,SOLVED
+puzzle_5x5_01,5x5,25,18,484,141,101,2417,0,22,127.97,115.95,True,SOLVED
+puzzle_5x5_02,5x5,25,21,496,72,34,1670,0,23,276.36,261.79,True,SOLVED

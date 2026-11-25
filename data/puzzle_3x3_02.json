@@ -129,7 +129,7 @@
             "col": "B"
           }
         },
-        "description": "At most 1 person in Column B is a Criminal."
+        "description": "Fiona's Sketch: At most 1 person in Column B is a Criminal. (Red Herring - Column B was already solved!)"
       }
     },
     {
@@ -151,7 +151,7 @@
             "cell": "B2"
           }
         },
-        "description": "An even number of neighbors of Edward are Criminals."
+        "description": "George's Clue: An even number of neighbors of Edward are Criminals."
       }
     },
     {
@@ -177,7 +177,7 @@
             "col": "C"
           }
         },
-        "description": "Column A has more Criminals than Column C."
+        "description": "Helen's Ledger: Column A has more Criminals than Column C."
       }
     },
     {
@@ -191,12 +191,12 @@
       "hidden_status": "INNOCENT",
       "clue": {
         "id": "clue_C3",
-        "type": "FACT",
+        "type": "DIFFERENT",
         "params": {
-          "target": "C3",
-          "status": "INNOCENT"
+          "target1": "C3",
+          "target2": "B2"
         },
-        "description": "Ian is Innocent."
+        "description": "Ian whispers: Ian and Edward have different statuses."
       }
     }
   ]
