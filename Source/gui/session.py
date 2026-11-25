@@ -369,16 +369,18 @@ class GameSession:
         m = getattr(a, "metrics", None)
         cache = getattr(a, "_clue_cache", {}) or {}
         clauses = sum(len(v) for v in cache.values())
-        max_var = max((abs(l) for v in cache.values() for cl in v for l in cl), default=0)
+        mapper = getattr(getattr(a, "encoder", None), "mapper", None)
+        aux = mapper.auxiliary_variable_count if mapper else 0
         primary = self.size * self.size
         rt = getattr(m, "runtime", 0.0)
         return {
             "Grid": f"{self.size}x{self.size}",
             "Solved": f"{len(self.statuses())}/{primary}",
             "Primary vars": primary,
-            "Aux vars": max(0, max_var - primary),
+            "Aux vars": aux,                    
             "CNF clauses": clauses,
             "SAT calls": getattr(a, "sat_calls", 0),
+            "Steps": self._step_num,
             "Decisions": getattr(m, "decisions", 0),
             "Propagations": getattr(m, "propagations", 0),
             "Backtracks": getattr(m, "backtracks", 0),
