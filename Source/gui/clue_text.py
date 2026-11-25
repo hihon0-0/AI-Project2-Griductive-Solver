@@ -8,7 +8,7 @@ Segment = tuple[str, Optional[str]]
 def _extract_pair(params: dict) -> tuple[str, str]:
     if "cells" in params and isinstance(params["cells"], list) and len(params["cells"]) >= 2:
         return params["cells"][0], params["cells"][1]
-    for k1, k2 in [("a", "b"), ("cell1", "cell2"), ("cell_a", "cell_b"), ("first", "second")]:
+    for k1, k2 in [("target1", "target2"), ("a", "b"), ("cell1", "cell2"), ("cell_a", "cell_b"), ("first", "second")]:
         if k1 in params and k2 in params:
             return params[k1], params[k2]
     return "", ""
@@ -114,11 +114,12 @@ def clue_segments(clue: dict, name_of: Callable[[str], str]) -> list[Segment]:
             r1 = _region_phrase(params.get("region1", {}), name_of)
             r2 = _region_phrase(params.get("region2", {}), name_of)
             if r1 and r2:
-                op = str(params.get("op", params.get("relation", "EQUAL"))).upper()
+                op = str(params.get("operator", params.get("op", params.get("relation", "EQUAL")))).upper()
                 op_map = {
                     "MORE": "more criminals than", "GREATER": "more criminals than", "GT": "more criminals than",
                     "FEWER": "fewer criminals than", "LESS": "fewer criminals than", "LT": "fewer criminals than",
                     "EQUAL": "the same number of criminals as", "EQ": "the same number of criminals as",
+                    "GTE": "at least as many criminals as", "LTE": "at most as many criminals as",
                 }
                 comp_txt = op_map.get(op, "as many criminals as")
                 return [
