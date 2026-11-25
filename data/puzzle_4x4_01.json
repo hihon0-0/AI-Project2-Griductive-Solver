@@ -138,12 +138,15 @@
       "hidden_status": "INNOCENT",
       "clue": {
         "id": "clue_C2",
-        "type": "SAME",
+        "type": "EXACTLY",
         "params": {
-          "target1": "C2",
-          "target2": "C3"
+          "count": 3,
+          "region": {
+            "type": "NEIGHBORS",
+            "cell": "C2"
+          }
         },
-        "description": "Grant and Karl have the same status."
+        "description": "Grant's Clue: Exactly 3 people in the neighbors of Grant are Criminals."
       }
     },
     {

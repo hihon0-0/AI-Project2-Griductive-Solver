@@ -4,7 +4,8 @@ from Source.gui.session import GameSession
 
 s = GameSession()
 print("warnings:", s.warnings)
-s.load(sys.argv[1])
+path = sys.argv[1] if len(sys.argv) > 1 else "data/puzzle_3x3_01.json"
+s.load(path)
 print("warnings after load:", s.warnings)
 print("size", s.size, "name", s.name)
 print("statuses:", s.statuses())
