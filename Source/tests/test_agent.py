@@ -173,11 +173,12 @@ def test_hint_prefers_fewest_clues_and_lists_the_whole_proof():
     """5x5_01 after A2: B2 comes first in row-major order but needs two clues, C2 needs one."""
     from pathlib import Path
     from Source.agent.agent import DeductiveAgent
-    from Source.agent.hint import proof_clues
     from Source.engine.puzzle_io import load_puzzle
 
     engine = GameEngine(load_puzzle(str(Path(__file__).parents[2] / "data" / "puzzle_5x5_01.json")))
     assert engine.submit_verdict("A2", "INNOCENT").is_valid
     state, agent = engine.get_public_state(), DeductiveAgent()
     assert get_hint(state, agent) == ("C2", "CRIMINAL", ["clue_C3"])
-    assert proof_clues(agent, state, "B2", "INNOCENT") == ["clue_C3", "clue_A2"]
+    assert agent.proof_clues(state, "B2", "INNOCENT") == ["clue_C3", "clue_A2"]
+    step = next(DeductiveAgent().get_solution_stream(engine))
+    assert (step.cell_id, step.verdict, step.forced_by_clue_ids) == ("C2", "CRIMINAL", ["clue_C3"])
