@@ -53,7 +53,49 @@ def load_puzzle(file_path: str, schema_path: Optional[str] = None) -> dict:
         if init_id not in seen_ids:
             raise ValueError(f"Initial revealed cell '{init_id}' does not exist in grid")
 
+    for cell_entry in grid:
+        cid, clue = cell_entry["id"], cell_entry["clue"]
+        # GUI tìm clue của thẻ và agent cache CNF theo id này, nên id khác dạng sẽ làm sai cả hai
+        if clue["id"] != f"clue_{cid}":
+            raise ValueError(f"Cell '{cid}': clue id must be 'clue_{cid}', got '{clue['id']}'")
+        try:
+            _check_clue_params(clue["type"], clue["params"], size)
+        except KeyError as e:
+            raise ValueError(f"{clue['id']}: missing parameter {e}") from e
+        except ValueError as e:
+            raise ValueError(f"{clue['id']}: {e}") from e
+
     return puzzle_data
+
+def _check_clue_params(clue_type: str, params: dict, size: int) -> None:
+    """Parameters and referenced regions of one clue. The schema only checks their format."""
+    def check_cell(cell_id: str) -> None:
+        if not RegionHelper.is_valid_coord(cell_id, size):
+            raise ValueError(f"cell '{cell_id}' is not on the {size}x{size} board")
+
+    def region_size(name: str) -> int:
+        region = params[name]
+        if region["type"] == "EXPLICIT" and len(set(region["cells"])) != len(region["cells"]):
+            raise ValueError("EXPLICIT region has duplicate cells")
+        return len(RegionHelper.resolve_region(region, size))
+
+    if clue_type == "FACT":
+        check_cell(params["target"])
+        params["status"]
+    elif clue_type in ("SAME", "DIFFERENT"):
+        check_cell(params["target1"])
+        check_cell(params["target2"])
+    elif clue_type in ("EXACTLY", "AT_LEAST", "AT_MOST"):
+        cells, count = region_size("region"), params["count"]
+        if not 0 <= count <= cells:
+            raise ValueError(f"count {count} is outside 0..{cells}")
+    elif clue_type == "PARITY":
+        region_size("region")
+        params["parity"]
+    elif clue_type == "COUNT_COMPARE":
+        region_size("region1")
+        region_size("region2")
+        params["operator"]
 
 def save_puzzle(puzzle_data: dict, file_path: str, schema_path: Optional[str] = None) -> None:
     """Saves puzzle data to JSON after verifying schema."""

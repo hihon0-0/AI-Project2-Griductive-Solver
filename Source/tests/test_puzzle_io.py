@@ -126,3 +126,35 @@ def test_missing_initial_revealed_raises():
     finally:
         os.remove(tmp_name)
 
+
+def _row(count, row=1):
+    return {"count": count, "region": {"type": "ROW", "row": row}}
+
+
+@pytest.mark.parametrize("cell_id, change, message", [
+    ("B1", {"params": _row(4)}, "outside 0..3"),
+    ("B1", {"params": _row(1, row=5)}, "out of bounds"),
+    ("B1", {"params": {"count": 1, "region": {"type": "COLUMN", "col": "E"}}}, "out of bounds"),
+    ("A1", {"params": {"target1": "A1", "target2": "E5"}}, "not on the 3x3 board"),
+    ("A1", {"params": {"target1": "A1"}}, "missing parameter 'target2'"),
+    ("A2", {"params": {"count": 1, "region": {"type": "EXPLICIT", "cells": ["A2", "A2"]}}}, "duplicate cells"),
+    ("A1", {"id": "c1"}, "clue id must be"),
+])
+def test_bad_clue_is_rejected(tmp_path, cell_id, change, message):
+    puzzle = load_puzzle(SAMPLE_PATH)
+    next(c for c in puzzle["grid"] if c["id"] == cell_id)["clue"].update(change)
+    path = tmp_path / "bad.json"
+    path.write_text(json.dumps(puzzle), encoding="utf-8")
+    with pytest.raises(ValueError, match=message):
+        load_puzzle(str(path))
+
+
+def test_generator_matches_committed_puzzles():
+    """Running data/generate_all_puzzles.py must not change the committed puzzles."""
+    import data.generate_all_puzzles as generator
+
+    for path in glob.glob(os.path.join(DATA_DIR, "puzzle_*.json")):
+        name = os.path.splitext(os.path.basename(path))[0]
+        with open(path, encoding="utf-8") as f:
+            assert getattr(generator, f"get_{name}")() == json.load(f), name
+
