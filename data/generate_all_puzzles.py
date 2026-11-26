@@ -294,9 +294,9 @@ def get_puzzle_4x4_01() -> dict:
                 "character": {"name": "Grant", "occupation": "General"},
                 "hidden_status": "INNOCENT",
                 "clue": {
-                    "id": "clue_C2", "type": "SAME",
-                    "params": {"target1": "C2", "target2": "C3"},
-                    "description": "Grant and Karl have the same status."
+                    "id": "clue_C2", "type": "EXACTLY",
+                    "params": {"count": 3, "region": {"type": "NEIGHBORS", "cell": "C2"}},
+                    "description": "Grant's Clue: Exactly 3 people in the neighbors of Grant are Criminals."
                 }
             },
             {

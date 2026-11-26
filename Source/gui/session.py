@@ -144,7 +144,8 @@ class GameSession:
     # ------------------------------------------------------------------
     def _make_engine(self, data: dict):
         """GameEngine gắn agent.classify_cell làm entailment_verifier (để game KHÔNG cho đoán mò)."""
-        verifier = self._agent.classify_cell
+        # Agent riêng để kiểm phán quyết, nên tab Metrics chỉ đếm việc giải (khớp tools/benchmark.py)
+        verifier = DeductiveAgent().classify_cell
         try:
             params = inspect.signature(GameEngine.__init__).parameters
         except (TypeError, ValueError):
@@ -247,6 +248,7 @@ class GameSession:
             return VerdictOutcome(False, "ALREADY_REVEALED")
 
         try:
+            self._agent.build_kb(self._engine.get_public_state())  # đi tay vẫn có số biến phụ và mệnh đề
             res = normalize_verdict(self._engine.submit_verdict(cell, verdict))
         except Exception as exc:  # lỗi backend -> báo lên GUI, không để chương trình sập
             traceback.print_exc()
