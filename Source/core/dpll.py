@@ -8,7 +8,7 @@ Implements the classic Davis–Putnam–Logemann–Loveland algorithm with:
   3. **Deterministic variable selection** — picks the unassigned variable
      that appears in the most clauses (VSIDS-lite / DLIS heuristic), with
      a tie-break on ascending variable id for reproducibility.
-  4. **Recursive backtracking** — tries both polarities; counts every
+  4. **Recursive backtracking** — tries both polarities and counts every
      backtrack and decision in SolverMetrics.
   5. **Assumptions** — allows the caller (e.g. DeductiveAgent) to pass a
      list of initial forced literals so that "KB ∧ ¬Ci" checks can be
@@ -23,7 +23,7 @@ Parameters
 ----------
 clauses : list[list[int]]
     CNF formula as a list of clauses.  Each clause is a list of non-zero
-    integers; positive = True, negative = False.  Example:
+    integers. Positive = True, negative = False.  Example:
         [[1, -2], [-1, 2, 3]]   ≡  (x1 ∨ ¬x2) ∧ (¬x1 ∨ x2 ∨ x3)
 
 assumptions : list[int] | None
@@ -35,7 +35,7 @@ Returns
     is_sat : bool
         True iff the formula (with assumptions) is satisfiable.
     model : dict[int, bool] | None
-        A satisfying assignment {var_id: True/False} if SAT; None if UNSAT.
+        A satisfying assignment {var_id: True/False} if SAT, None if UNSAT.
     metrics : SolverMetrics
         Performance counters for this call.
 """
@@ -309,7 +309,7 @@ class DPLLSolver:
                 return min(unassigned)
             return None
 
-        # Pick variable with highest count; break ties by smallest id
+        # Pick variable with highest count, break ties by smallest id
         best_var = max(counts.keys(), key=lambda v: (counts[v], -v))
         return best_var
 

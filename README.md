@@ -1,6 +1,6 @@
 # Griductive Solver — No-Guess Logic Deduction Game
 
-> **Môn học**: Nhập môn Trí tuệ Nhân tạo (CSC14003) — Khoa Công nghệ Thông tin, Trường ĐH Khoa học Tự nhiên, ĐHQG-HCM.  
+> **Môn học**: Cơ sở Trí tuệ Nhân tạo (CSC14003) — Khoa Công nghệ Thông tin, Trường ĐH Khoa học Tự nhiên, ĐHQG-HCM.  
 > **Đồ án 2 (Project 2)**: Propositional Logic, SAT Solver & Game Agent.  
 > **Mục tiêu**: Xây dựng hệ thống hoàn chỉnh từ thuật toán **DPLL SAT Solver** thuần Python, bộ **Mã hóa Mệnh đề CNF** (Tseytin Transformation), **Game Engine** bảo mật nghiệm ẩn, **Tác tử suy luận No-Guess** (*Entailment via Refutation*), đến **Giao diện Đồ họa Pygame** tương tác với hoạt cảnh lật thẻ, gợi ý quầng sáng và cơ chế chống đoán mò.
 
@@ -97,11 +97,11 @@ AI-Project2-Griductive-Solver/
 
 | STT | MSSV | Họ và tên | Vai trò Kỹ thuật | Phân hệ phụ trách | Trách nhiệm chính |
 | :---: | :---: | :--- | :--- | :--- | :--- |
-| **1** | **24120132** | **Phạm Nguyễn Quang Sáng** | **CNF Encoder & Semantics** | `Source/core/encoder.py`<br>`Source/core/semantics.py` | Áp dụng biến đổi Tseytin mã hóa 8 loại Clue (6 cốt lõi + 2 mở rộng `PARITY`, `COUNT_COMPARE`) sang dạng chuẩn hội CNF; ánh xạ biến `VariableMapper`; xây dựng hàm đánh giá chân trị thực tế. |
-| **2** | **24120152** | **Trần Ngọc Thanh Tú** | **Core DPLL Solver** | `Source/core/dpll.py`<br>`Source/core/solver_metrics.py` | Cài đặt thuật toán giải SAT DPLL thuần Python; lan truyền đơn vị (Unit Propagation), triệt tiêu biến đơn cực (Pure Literal), quay lui (Backtracking) có hỗ trợ Assumptions; đo đạc bộ chỉ số hiệu năng `SolverMetrics`. |
-| **3** | **24120181** | **Huỳnh Huy Hoàng** *(Nhóm trưởng)* | **Game Engine & Datasets** | `Source/engine/*`<br>`data/*` | Thiết kế JSON Schema, phân giải vùng tọa độ `RegionHelper`, xây dựng `GameEngine` cách ly nghiệm ẩn, cơ chế chặn đoán mò; thiết kế và thẩm định bộ 6 màn chơi chuẩn ($3\times3, 4\times4, 5\times5$). |
-| **4** | **24120199** | **Trịnh Kim Mai** | **GUI & User Experience** | `Source/gui/*` | Giao diện đồ họa Pygame hoàn chỉnh; cầu nối `GameSession`; hiệu ứng lật thẻ bài 3D giả lập; gợi ý quầng sáng ngọc đa lớp; hoạt cảnh tự động giải từng bước; bảng phụ Side Panel (Clue, Trace, Metrics); dãy nút chọn nhanh màn chơi. |
-| **5** | **24120221** | **Trần Công Quang** | **Deductive Logic Agent** | `Source/agent/*` | Tác tử suy diễn logic dựa trên phản chứng ($KB \land \neg C \models \bot$); vòng lặp suy luận No-Guess; ghi nhận vết suy luận `DeductionStep`; kiểm tra nghiệm duy nhất `uniqueness.py`; bộ sinh gợi ý `hint.py`. |
+| **1** | **24120132** | **Phạm Nguyễn Quang Sáng** | **CNF Encoder & Semantics** | `Source/core/encoder.py`<br>`Source/core/semantics.py` | Áp dụng biến đổi Tseytin mã hóa 8 loại Clue (6 cốt lõi + 2 mở rộng `PARITY`, `COUNT_COMPARE`) sang dạng chuẩn hội CNF. Ánh xạ biến `VariableMapper`. Xây dựng hàm đánh giá chân trị thực tế. |
+| **2** | **24120152** | **Trần Ngọc Thanh Tú** | **Core DPLL Solver** | `Source/core/dpll.py`<br>`Source/core/solver_metrics.py` | Cài đặt thuật toán giải SAT DPLL thuần Python. Lan truyền đơn vị (Unit Propagation), triệt tiêu biến đơn cực (Pure Literal), quay lui (Backtracking) có hỗ trợ Assumptions. Đo đạc bộ chỉ số hiệu năng `SolverMetrics`. |
+| **3** | **24120181** | **Huỳnh Huy Hoàng** *(Nhóm trưởng)* | **Game Engine & Datasets** | `Source/engine/*`<br>`data/*` | Thiết kế JSON Schema, phân giải vùng tọa độ `RegionHelper`, xây dựng `GameEngine` cách ly nghiệm ẩn, cơ chế chặn đoán mò. Thiết kế và thẩm định bộ 6 màn chơi chuẩn ($3\times3, 4\times4, 5\times5$). |
+| **4** | **24120199** | **Trịnh Kim Mai** | **GUI & User Experience** | `Source/gui/*` | Giao diện đồ họa Pygame hoàn chỉnh. Cầu nối `GameSession`. Hiệu ứng lật thẻ bài 3D giả lập. Gợi ý quầng sáng ngọc đa lớp. Hoạt cảnh tự động giải từng bước. Bảng phụ Side Panel (Clue, Trace, Metrics). Dãy nút chọn nhanh màn chơi. |
+| **5** | **24120221** | **Trần Công Quang** | **Deductive Logic Agent** | `Source/agent/*` | Tác tử suy diễn logic dựa trên phản chứng ($KB \land \neg C \models \bot$). Vòng lặp suy luận No-Guess. Ghi nhận vết suy luận `DeductionStep`. Kiểm tra nghiệm duy nhất `uniqueness.py`. Bộ sinh gợi ý `hint.py`. |
 
 ---
 

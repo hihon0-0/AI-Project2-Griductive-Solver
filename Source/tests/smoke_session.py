@@ -19,5 +19,7 @@ for i in range(12):
     print(i, o.kind, o.cell, o.verdict, o.clue_ids)
     if o.kind != "OK": break
 print("final terminal:", s.terminal, "solved:", s.is_solved())
-print("log:"); [print("  ", r) for r in s.log]
+print("log:")
+for r in s.log:
+    print("  ", r)
 print("metrics:", s.metrics())
