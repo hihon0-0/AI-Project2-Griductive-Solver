@@ -208,7 +208,7 @@ class GriductiveApp:
             self._stop_auto()
             self._sync_ui_from_session()
             if self.session.warnings:
-                self.status_bar.set_status("WARNING: " + "; ".join(self.session.warnings), "warning")
+                self.status_bar.set_status("WARNING: " + ". ".join(self.session.warnings), "warning")
             else:
                 self.status_bar.set_status(
                     f"Loaded '{self.session.name}' ({self.session.size}x{self.session.size}). Click a card to begin.",
@@ -428,7 +428,7 @@ class GriductiveApp:
                 )
         elif step_out.kind == "STUCK":
             self._stop_auto()
-            self.status_bar.set_status("STUCK: Solver reached fixpoint; no further verdict is entailed.", "warning")
+            self.status_bar.set_status("STUCK: Solver reached fixpoint. No further verdict is entailed.", "warning")
         elif step_out.kind == "INCONSISTENT":
             self._stop_auto()
             self.status_bar.set_status("INCONSISTENT: Revealed clues contain a logical contradiction!", "contradicted")

@@ -1,6 +1,6 @@
 """Lớp giao tiếp DUY NHẤT giữa GUI và logic (Engine + Agent).
 
-GUI chỉ nói chuyện với `GameSession`; mọi thứ của backend (GameEngine, DeductiveAgent, get_hint,
+GUI chỉ nói chuyện với `GameSession`. Mọi thứ của backend (GameEngine, DeductiveAgent, get_hint,
 load_puzzle) đều được gọi trực tiếp ở đây, không còn module giả (dev_stubs) nào.
 
 Hợp đồng với backend (những gì file này giả định):
@@ -105,7 +105,7 @@ def normalize_verdict(raw: Any) -> VerdictResult:
 
 
 class _EngineAdapterForAgent:
-    """Agent đọc `result.is_valid`; adapter đảm bảo submit_verdict luôn trả VerdictResult."""
+    """Agent đọc `result.is_valid`. Adapter đảm bảo submit_verdict luôn trả VerdictResult."""
 
     def __init__(self, engine: Any):
         self._engine = engine
@@ -276,7 +276,7 @@ class GameSession:
     # Hint
     # ------------------------------------------------------------------
     def _hint_from_backend(self, pub) -> Optional[tuple]:
-        """Gọi Source.agent.hint.get_hint; nếu module không có thì tự quét bằng agent.classify_cell."""
+        """Gọi Source.agent.hint.get_hint. Nếu module không có thì tự quét bằng agent.classify_cell."""
         if _backend_get_hint is not None:
             try:
                 n_params = len(inspect.signature(_backend_get_hint).parameters)

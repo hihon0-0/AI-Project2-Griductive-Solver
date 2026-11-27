@@ -1,6 +1,6 @@
 """CNF Encoder for clue templates (Member 2).
 
-Cell variables are positive integers; auxiliary variables for cardinality
+Cell variables are positive integers. Auxiliary variables for cardinality
 constraints use numbers starting at 1000.
 """
 

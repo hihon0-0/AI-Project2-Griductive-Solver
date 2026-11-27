@@ -27,7 +27,7 @@ def row_major_key(cell_id: str) -> tuple[int, str]:
 
 class DeductiveAgent:
     """Sees only PublicState. encoder/solver are injectable so the agent can be tested
-    before TV1/TV2 finish; defaults are the team's CNFEncoder and DPLLSolver."""
+    before TV1/TV2 finish. Defaults are the team's CNFEncoder and DPLLSolver."""
 
     def __init__(self, encoder=None, solver=None):
         if encoder is None:
@@ -80,7 +80,7 @@ class DeductiveAgent:
 
     # ---------- classification ----------
     def classify(self, state: PublicState) -> dict[str, str]:
-        """Verdict for every unresolved cell; every value is INCONSISTENT if KB_t is UNSAT."""
+        """Verdict for every unresolved cell. Every value is INCONSISTENT if KB_t is UNSAT."""
         kb = self.build_kb(state)
         cells = sorted(state.unsolved_cells, key=row_major_key)
         if not self._sat(kb, []):
@@ -172,5 +172,5 @@ class DeductiveAgent:
             yield step
 
     def solve(self, engine) -> list[DeductionStep]:
-        """Runs the whole loop; check self.status afterwards."""
+        """Runs the whole loop. Check self.status afterwards."""
         return list(self.get_solution_stream(engine))
